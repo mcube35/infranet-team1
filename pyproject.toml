@@ -1,5 +1,5 @@
 [project]
-name = "team1-project"
+name = "infranet_team1"
 version = "0.1.0"
 description = ""
 authors = [
@@ -8,10 +8,17 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "flask (>=3.1.1,<4.0.0)",
+    "pymongo (>=4.13.2,<5.0.0)",
+    "flask-pymongo (>=3.0.1,<4.0.0)",
+    "flask-login (>=0.6.3,<0.7.0)",
+    "bcrypt (>=4.3.0,<5.0.0)",
+    "flask-wtf (>=1.2.2,<2.0.0)",
+    "wtforms (>=3.2.1,<4.0.0)"
 ]
 
 [tool.poetry]
-packages = [{include = "team1_project", from = "src"}]
+packages = [{include = "infranet_team1", from = "src"}]
 
 
 [build-system]
