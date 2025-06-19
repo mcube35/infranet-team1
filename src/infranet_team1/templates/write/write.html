@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% if post %}글 수정{% else %}글쓰기{% endif %} - 커뮤니티</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+    <header>
+        <h1><a href="{{ url_for('write.home') }}">커뮤니티</a></h1>
+        <nav>
+            <a href="{{ url_for('write.home') }}">게시글 목록</a> |
+            <a href="{{ url_for('write.new_post') }}">글쓰기</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>{% if post %}글 수정{% else %}글쓰기{% endif %}</h2>
+
+        <form method="POST">
+            <label>작성자:{{ user_name }}</label>
+            <br/><br/>
+
+            <label>제목:
+                <input type="text" name="title" value="{{ post.title if post else '' }}" required />
+            </label>
+            <br/><br/>
+
+            <label>내용:<br/>
+                <textarea name="content" rows="10" required>{{ post.content if post else '' }}</textarea>
+            </label>
+            <br/><br/>
+
+            <button type="submit">{% if post %}수정{% else %}작성{% endif %}</button>
+        </form>
+    </main>
+
+    <footer>
+        <small>© 2025 커뮤니티</small>
+    </footer>
+</body>
+</html>

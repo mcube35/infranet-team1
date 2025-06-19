@@ -9,8 +9,8 @@ password_plain = "123"
 hashed_password = bcrypt.hashpw(password_plain.encode("utf-8"), bcrypt.gensalt())
 
 hr_data = {
-    "name": "mcube",
-    "email": "mcube3575@gmail.com",
+    "name": "admin",
+    "email": "admin@gmail.com",
     "password": hashed_password,
     "position": "개발자",
     "department": "IT팀",
