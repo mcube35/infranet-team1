@@ -1,11 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>업무관리 메인화면</title>
+    <title>📋 전체/팀별 업무 현황</title>
 </head>
 <body>
-    <h1>업무관리 메인화면</h1>
-</body>
-</html>
+    <h2>📋 전체/팀별 업무 현황</h2>
+
+    <!-- 🔍 필터 영역 -->
+    <form method="get">
+        <label>팀:
+            <select name="team">
+                <option value="전체">전체</option>
+                <option value="개발팀">개발팀</option>
+                <option value="영업팀">영업팀</option>
+            </select>
+        </label>
+
+        <label>상태:
+            <select name="status">
+                <option value="전체">전체</option>
+                <option value="대기중">대기중</option>
+                <option value="진행중">진행중</option>
+                <option value="완료">완료</option>
+            </select>
+        </label>
+
+        <label>시작일: <input type="date" name="start_date"></label>
+        <label>종료일: <input type="date" name="end_date"></label>
+
+        <button type="submit">필터 적용</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('task.add') }}">➕ 업무 추가</a>
+
+    <!-- 📊 업무 리스트 -->
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
