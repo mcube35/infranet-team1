@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 from db import mongo
 
+# http://127.0.0.1:5000/write
 write_bp = Blueprint("write", __name__)
 
 # {
