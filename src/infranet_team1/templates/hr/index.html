@@ -1,11 +1,218 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인사관리 메인화면</title>
+    <title>HR Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+        .left-panel {
+            width: 250px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .left-panel-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .left-panel-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .top-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .section-box {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .section-box h2 {
+            margin-top: 0;
+            color: #555;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .section-box h2 span.emoji { /* 이모지 스타일 추가 */
+            margin-right: 8px;
+        }
+        .notice-board {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-top: 20px;
+        }
+        .notice-board h2 {
+            margin-top: 0;
+            color: #555;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .notice-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .notice-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .notice-list li:last-child {
+            border-bottom: none;
+        }
+        /* Calendar specific styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .calendar-day {
+            padding: 5px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .calendar-header {
+            grid-column: span 7;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #444;
+        }
+        /* Profile Image Placeholder */
+        .profile-image-placeholder {
+            width: 100px; /* 원하는 너비 */
+            height: 100px; /* 원하는 높이 */
+            background-color: #e0e0e0;
+            border-radius: 50%; /* 원형으로 만들 경우 */
+            margin: 0 auto 10px auto; /* 중앙 정렬 및 아래 여백 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: #666;
+            overflow: hidden; /* 이미지가 넘치지 않도록 */
+        }
+        .profile-image-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 이미지를 잘라서 채움 */
+        }
+    </style>
 </head>
 <body>
-    <h1>인사관리 메인화면</h1>
+    <div class="left-panel">
+        <div class="left-panel-section">
+            <h3>프로필</h3>
+            <div class="profile-image-placeholder">
+                사진 영역
+            </div>
+            <p>이름: [사용자 이름]</p>
+            <p>소속: [부서/팀]</p>
+            <p>직급: [직급]</p>
+        </div>
+        <div class="left-panel-section">
+            <h3>개인 업무</h3>
+            <ul>
+                <li>업무 1...</li>
+                <li>업무 2...</li>
+                <li>업무 3...</li>
+            </ul>
+        </div>
+        <div class="left-panel-section">
+            <h3>달력</h3>
+            <div class="calendar-header">2025년 6월</div>
+            <div class="calendar-grid">
+                <div class="calendar-day">1</div>
+                <div class="calendar-day">2</div>
+                <div class="calendar-day">3</div>
+                <div class="calendar-day">4</div>
+                <div class="calendar-day">5</div>
+                <div class="calendar-day">6</div>
+                <div class="calendar-day">7</div>
+                <div class="calendar-day">8</div>
+                <div class="calendar-day">9</div>
+                <div class="calendar-day">10</div>
+                <div class="calendar-day">11</div>
+                <div class="calendar-day">12</div>
+                <div class="calendar-day">13</div>
+                <div class="calendar-day">14</div>
+                <div class="calendar-day">15</div>
+                <div class="calendar-day">16</div>
+                <div class="calendar-day">17</div>
+                <div class="calendar-day">18</div>
+                <div class="calendar-day">19</div>
+                <div class="calendar-day">20</div>
+                <div class="calendar-day">21</div>
+                <div class="calendar-day">22</div>
+                <div class="calendar-day">23</div>
+                <div class="calendar-day">24</div>
+                <div class="calendar-day">25</div>
+                <div class="calendar-day">26</div>
+                <div class="calendar-day">27</div>
+                <div class="calendar-day">28</div>
+                <div class="calendar-day">29</div>
+                <div class="calendar-day">30</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div style="text-align: center; font-size: 2em; font-weight: bold; color: #333; margin-bottom: 20px;">
+            HR Main
+        </div>
+        <div class="top-sections">
+            <div class="section-box">
+                <h2><span class="emoji">⏰</span> 근태</h2>
+            </div>
+            <div class="section-box">
+                <h2><span class="emoji">✈️</span> 휴가</h2>
+            </div>
+            <div class="section-box">
+                <h2><span class="emoji">🏢</span> 조직</h2>
+            </div>
+            <div class="section-box">
+                <h2><span class="emoji">👋</span> 퇴직 관리</h2>
+            </div>
+            <div class="section-box">
+                <h2><span class="emoji">📈</span> 인사고과</h2>
+            </div>
+        </div>
+
+        <div class="notice-board">
+            <h2>공지사항</h2>
+            <ul class="notice-list">
+                <li>1. [공지사항 제목 1] - [날짜]</li>
+                <li>2. [공지사항 제목 2] - [날짜]</li>
+                <li>3. [공지사항 제목 3] - [날짜]</li>
+            </ul>
+        </div>
+    </div>
 </body>
 </html>
