@@ -1,11 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>업무관리 메인화면</title>
+    <title>업무 현황</title>
 </head>
 <body>
-    <h1>업무관리 메인화면</h1>
+    <h2>📋 전체/팀별 업무 현황</h2>
+
+    <!-- 필터 폼 -->
+    <form method="get">
+        <label>팀:
+            <select name="team">
+                <option value="전체">전체</option>
+                <option value="개발팀">개발팀</option>
+                <option value="영업팀">영업팀</option>
+            </select>
+        </label>
+
+        <label>상태:
+            <select name="status">
+                <option value="전체">전체</option>
+                <option value="대기중">대기중</option>
+                <option value="진행중">진행중</option>
+                <option value="완료">완료</option>
+            </select>
+        </label>
+
+        <label>시작일: <input type="date" name="start_date"></label>
+        <label>종료일: <input type="date" name="end_date"></label>
+
+        <button type="submit">필터 적용</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('task.add') }}">➕ 업무 추가</a>
+
+    <!-- 업무 리스트 테이블 -->
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>제목</th>
+                <th>팀</th>
+                <th>상태</th>
+                <th>우선순위</th>
+                <th>마감일</th>
+                <th>첨부파일</th>
+                <th>수정/삭제</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.team }}</td>
+                <td>{{ task.status }}</td>
+                <td>{{ task.priority }}</td>
+                <td>{{ task.due_date }}</td>
+                <td>
+                    {% if task.file and task.file != '첨부파일 없음' %}
+                        <a href="{{ url_for('task.uploaded_file', filename=task.file) }}">{{ task.file }}</a>
+                    {% else %}
+                        없음
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('task.edit', task_id=task._id) }}">수정</a> /
+                    <a href="{{ url_for('task.delete', task_id=task._id) }}" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">등록된 업무가 없습니다.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <!-- 업무 상태별 마감 차트 -->
+   <h3>📊 마감일 기준 상태별 업무 통계</h3>
+    <img src="{{ url_for('task.chart_image') }}" alt="업무 상태별 마감 차트" width="800" height="400">
+
 </body>
 </html>

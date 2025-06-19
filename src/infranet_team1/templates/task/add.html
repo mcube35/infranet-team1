@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>업무 등록</title>
+</head>
+<body>
+    <h2>📝 업무 추가</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <label>제목: <input type="text" name="title" required></label><br><br>
+
+        <label>상세 설명:<br>
+            <textarea name="description" rows="4" cols="40" required></textarea>
+        </label><br><br>
+
+        <label>상태:
+            <select name="status" required>
+                <option value="대기중">대기중</option>
+                <option value="진행중">진행중</option>
+                <option value="완료">완료</option>
+            </select>
+        </label><br><br>
+
+        <label>우선순위:
+            <select name="priority" required>
+                <option value="낮음">낮음</option>
+                <option value="보통" selected>보통</option>
+                <option value="높음">높음</option>
+            </select>
+        </label><br><br>
+
+        <label>팀:
+            <select name="team" required>
+                <option value="개발팀">개발팀</option>
+                <option value="영업팀">영업팀</option>
+            </select>
+        </label><br><br>
+
+        <label>마감일: <input type="date" name="due_date" required></label><br><br>
+
+        <label>첨부파일: <input type="file" name="file"></label><br><br>
+
+        <button type="submit">등록</button>
+        <a href="{{ url_for('task.home') }}">취소</a>
+    </form>
+</body>
+</html>
