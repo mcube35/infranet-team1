@@ -1,70 +1,51 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8" />
-    <title>{{ post.title }} - 커뮤니티</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-</head>
-<body>
-    <header>
-        <h1><a href="{{ url_for('write.home') }}">커뮤니티</a></h1>
-        <nav>
-            <a href="{{ url_for('write.home') }}">게시글 목록</a> |
-            <a href="{{ url_for('write.new_post') }}">글쓰기</a>
-        </nav>
-    </header>
+{% extends "write/base.html" %}
 
-    <main>
-        <article class="post-detail">
-            <h2>{{ post.title }}</h2>
-            <p class="meta">
-                작성자: {{ user_name }} | 작성일: {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
-                {% if post.updated_at %}
-                | 수정일: {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}
-                {% endif %}
-            </p>
-            <div class="content">
-                <pre>{{ post.content }}</pre>
-            </div>
+{% block title %}{{ post.title }} - 커뮤니티{% endblock %}
 
-            <div class="post-actions">
-                <a href="{{ url_for('write.edit', post_id=post._id) }}">수정</a>
-                <form method="POST" action="{{ url_for('write.delete', post_id=post._id) }}" style="display:inline;">
-                    <button type="submit" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
-                </form>
-            </div>
-        </article>
+{% block content %}
+<article class="post-detail">
+    <h2>{{ post.title }}</h2>
+    <p class="meta">
+        작성자: {{ user_name }} | 작성일: {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+        {% if post.updated_at %}
+        | 수정일: {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}
+        {% endif %}
+    </p>
+    <div class="content">
+        <pre>{{ post.content }}</pre>
+    </div>
 
-        <section class="comments">
-            <h3>댓글 ({{ post.comments | length }})</h3>
-            {% if post.comments %}
-            <ul>
-                {% for comment in post.comments %}
-                <li>
-                    <b>{{ author_map[comment.author_id] if comment.author_id in author_map else '알 수 없음' }}</b>
-                    <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                    <pre>{{ comment.content }}</pre>
-                </li>
+    <div class="post-actions">
+        <a href="{{ url_for('write.edit_form', post_id=post._id) }}">수정</a>
+        <form method="POST" action="{{ url_for('write.delete', post_id=post._id) }}" style="display:inline;">
+            <button type="submit" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+        </form>
+    </div>
+</article>
 
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>댓글이 없습니다.</p>
-            {% endif %}
+<section class="comments">
+    <h3>댓글 ({{ post.comments | length }})</h3>
+    {% if post.comments %}
+    <ul>
+        {% for comment in post.comments %}
+        <li>
+            <b>{{ author_map[comment.author_id] if comment.author_id in author_map else '알 수 없음' }}</b>
+            <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            <pre>{{ comment.content }}</pre>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>댓글이 없습니다.</p>
+    {% endif %}
 
-            <h4>댓글 작성</h4>
-            <form method="POST">
-                <label>작성자: {{user_name}}</label><br/>
-                <label>내용:<br/>
-                    <textarea name="comment_content" rows="4" required></textarea>
-                </label><br/>
-                <button type="submit">댓글 등록</button>
-            </form>
-        </section>
-    </main>
-
-    <footer>
-        <small>© 2025 커뮤니티</small>
-    </footer>
-</body>
-</html>
+    <h4>댓글 작성</h4>
+    <form method="POST">
+        <label>작성자: {{user_name}}</label><br/>
+        <label>내용:<br/>
+            <textarea name="comment_content" rows="4" required></textarea>
+        </label><br/>
+        <button type="submit">댓글 등록</button>
+    </form>
+</section>
+{% endblock %}

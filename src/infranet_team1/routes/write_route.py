@@ -27,64 +27,58 @@ write_bp = Blueprint("write", __name__)
 
 @write_bp.route("/")
 def home():
-    posts = mongo.db.posts.find().sort("created_at", -1)
-    return render_template("write/index.html", posts = posts)
+    posts = list(mongo.db.posts.find().sort("created_at", -1))
+    author_ids = list({post["author_id"] for post in posts})
+
+    authors = mongo.db.hr.find({"_id": {"$in": author_ids}})
+    author_map = {author["_id"]: author["name"] for author in authors}
+
+    return render_template("write/index.html", posts = posts, author_map=author_map)
 
 
-# 글쓰기
-@write_bp.route("/new", methods=["GET", "POST"])
-def new_post():
-    if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
-
-        if not title or not content:
-            return "모든 필드를 입력하세요.", 400
-
-        post = {
-            "title": title,
-            "content": content,
-            "author_id": ObjectId(current_user.id),
-            "tags": [],  # 기본은 빈 리스트
-            "created_at": datetime.datetime.utcnow(),
-            "updated_at": None,
-            "comments": []
-        }
-
-        mongo.db.posts.insert_one(post)
-        return redirect(url_for("write.home"))
+# 게시글 작성 폼
+@write_bp.route("/new", methods=["GET"])
+def write_form():
+    if not current_user.is_authenticated:
+        return "로그인을 해주세요"
     
-    user_name = current_user.name
-    return render_template("write/write.html", user_name=user_name)
+    return render_template("write/write.html", user_name=current_user.name)
 
 
-# 게시글 상세보기 및 댓글 작성
-@write_bp.route("/post/<post_id>", methods=["GET", "POST"])
+# 게시글 작성 POST처리
+@write_bp.route("/new", methods=["POST"])
+def save_post():
+    if not current_user.is_authenticated:
+        return "로그인을 해주세요"
+    
+    title = request.form.get("title").strip()
+    content = request.form.get("content").strip()
+
+    if not title or not content:
+        return "모든 필드를 입력하세요.", 400
+
+    post = {
+        "title": title,
+        "content": content,
+        "author_id": ObjectId(current_user.id),
+        "tags": [],  # 기본은 빈 리스트
+        "created_at": datetime.datetime.utcnow(),
+        "updated_at": None,
+        "comments": []
+    }
+
+    mongo.db.posts.insert_one(post)
+    return redirect(url_for("write.home"))
+
+
+# 게시글 상세보기
+@write_bp.route("/post/<post_id>", methods=["GET"])
 def detail(post_id):
     post = mongo.db.posts.find_one({"_id": ObjectId(post_id)})
     if not post:
         abort(404)
 
-    if request.method == "POST":
-        comment_content = request.form.get("comment_content")
-
-        if not comment_content:
-            return "댓글 내용을 입력하세요.", 400
-
-        comment = {
-            "comment_id": ObjectId(),
-            "author_id": ObjectId(current_user.id),
-            "content": comment_content,
-            "created_at": datetime.datetime.utcnow()
-        }
-
-        mongo.db.posts.update_one(
-            {"_id": ObjectId(post_id)},
-            {"$push": {"comments": comment}}
-        )
-        return redirect(url_for("write.detail", post_id=post_id))
-    
-    author_ids = [comment["author_id"] for comment in post.get("comments", [])]
+    author_ids = list({comment["author_id"] for comment in post.get("comments", [])})
 
     authors = mongo.db.hr.find({"_id": {"$in": author_ids}})
     author_map = {author["_id"]: author["name"] for author in authors}
@@ -93,36 +87,68 @@ def detail(post_id):
     return render_template("write/detail.html", post=post, user_name=user_name, author_map=author_map)
 
 
-# 게시글 수정
-@write_bp.route("/edit/<post_id>", methods=["GET", "POST"])
-def edit(post_id):
+# 댓글 작성 POST처리
+@write_bp.route("/post/<post_id>", methods=["POST"])
+def add_comment(post_id):
+    post = mongo.db.posts.find_one({"_id": ObjectId(post_id)})
+    if not post:
+        abort(404)
+        
+    comment_content = request.form.get("comment_content")
+    
+    if not comment_content:
+        return "댓글 내용을 입력하세요.", 400
+
+    comment = {
+        "comment_id": ObjectId(),
+        "author_id": ObjectId(current_user.id),
+        "content": comment_content,
+        "created_at": datetime.datetime.utcnow()
+    }
+
+    mongo.db.posts.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$push": {"comments": comment}}
+    )
+    return redirect(url_for("write.detail", post_id=post_id))
+
+
+# 게시글 수정 폼
+@write_bp.route("/edit/<post_id>", methods=["GET"])
+def edit_form(post_id):
+    post = mongo.db.posts.find_one({"_id": ObjectId(post_id)})
+    if not post:
+        abort(404)
+    return render_template("write/write.html", post=post)
+
+
+# 게시글 수정 POST처리
+@write_bp.route("/edit/<post_id>", methods=["POST"])
+def edit_post(post_id):
     post = mongo.db.posts.find_one({"_id": ObjectId(post_id)})
     if not post:
         abort(404)
 
-    if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
+    title = request.form.get("title")
+    content = request.form.get("content")
 
-        if not title or not content:
-            return "제목과 내용을 입력하세요.", 400
+    if not title or not content:
+        return "제목과 내용을 입력하세요.", 400
 
-        mongo.db.posts.update_one(
-            {"_id": ObjectId(post_id)},
-            {
-                "$set": {
-                    "title": title,
-                    "content": content,
-                    "updated_at": datetime.datetime.utcnow()
-                }
+    mongo.db.posts.update_one(
+        {"_id": ObjectId(post_id)},
+        {
+            "$set": {
+                "title": title,
+                "content": content,
+                "updated_at": datetime.datetime.utcnow()
             }
-        )
-        return redirect(url_for("write.detail", post_id=post_id))
+        }
+    )
+    return redirect(url_for("write.detail", post_id=post_id))
 
-    return render_template("write/write.html", post=post)
 
-
-# 게시글 삭제
+# 게시글 삭제 POST처리
 @write_bp.route("/delete/<post_id>", methods=["POST"])
 def delete(post_id):
     result = mongo.db.posts.delete_one({"_id": ObjectId(post_id)})
