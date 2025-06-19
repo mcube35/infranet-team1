@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}내 페이지{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css" />
+  <style>
+    html {
+    font-size: 90%; 
+    }
+
+    button, input, select, textarea {
+    font-size: 1rem;
+    padding: 0.4rem 0.6rem;
+    }
+
+    table {
+    font-size: 0.9rem;
+    }
+
+
+    .user-info {
+        font-size: 13px;
+    }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .user-box {
+      position: relative;
+      display: inline-block;
+    }
+
+    .user-info {
+      display: none;
+      position: absolute;
+      top: 120%;
+      right: 0;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 0.8rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    .user-box:hover .user-info {
+      display: block;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    aside details {
+      margin: 0;
+      padding: 0.4rem 0;
+    }
+
+    aside ul {
+      margin: 0.4rem 0 0 1rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    aside ul li a {
+      text-decoration: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ✅ 사이드바 -->
+  <aside style="padding: 1rem;">
+    <nav>
+      <details open>
+        <summary>📁 커뮤니티</summary>
+        <ul>
+          <li><a href="{{ url_for('write.home') }}">게시판</a></li>
+        </ul>
+      </details>
+
+      <details open>
+        <summary>📁 업무관리</summary>
+        <ul>
+          <li><a href="{{ url_for('task.home') }}">업무 현황</a></li>
+        </ul>
+      </details>
+
+      {% if current_user.role == 'admin' %}
+      <details open>
+        <summary>📁 관리자 전용</summary>
+        <ul>
+          <li><a href="{{ url_for('auth.register_form') }}">계정 등록</a></li>
+        </ul>
+      </details>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <!-- ✅ 우측 영역 -->
+  <div style="display: flex; flex-direction: column;">
+
+    <!-- 사용자 아이콘 -->
+    <header style="display: flex; justify-content: flex-end; align-items: center; padding: 1rem; border-bottom: 1px solid #eee;">
+      <div class="user-box">
+        <img src="{{ url_for('static', filename='img/1557.png') }}" alt="사용자 아바타" class="avatar" />
+        <div class="user-info">
+          <strong>{{ current_user.name }}</strong><br>
+          {{ current_user.email }}<br>
+          권한: {{ current_user.role }}
+        </div>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 삽입 -->
+    <main style="padding: 2rem;">
+      {% block content %}
+      {% endblock %}
+    </main>
+
+  </div>
+</div>
+
+</body>
+</html>

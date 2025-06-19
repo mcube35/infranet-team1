@@ -1,4 +1,4 @@
-{% extends "write/base.html" %}
+{% extends "layout.html" %}
 
 {% block title %}
 {% if post %}글 수정{% else %}글쓰기{% endif %} - 커뮤니티
@@ -8,7 +8,7 @@
 <h2>{% if post %}글 수정{% else %}글쓰기{% endif %}</h2>
 
 <form method="POST">
-    <label>작성자: {{ user_name }}</label>
+    <label>작성자: {{ current_user.name }}</label>
     <br/><br/>
 
     <label>제목:

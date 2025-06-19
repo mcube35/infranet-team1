@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>업무 현황</title>
-</head>
-<body>
+{% extends "layout.html" %}
+
+{% block title %}업무 현황{% endblock %}
+
+{% block content %}
     <h2>📋 전체/팀별 업무 현황</h2>
 
     <!-- 필터 폼 -->
@@ -81,6 +79,4 @@
     <!-- 업무 상태별 마감 차트 -->
    <h3>📊 마감일 기준 상태별 업무 통계</h3>
     <img src="{{ url_for('task.chart_image') }}" alt="업무 상태별 마감 차트" width="800" height="400">
-
-</body>
-</html>
+{% endblock %}

@@ -42,7 +42,7 @@ def write_form():
     if not current_user.is_authenticated:
         return "로그인을 해주세요"
     
-    return render_template("write/write.html", user_name=current_user.name)
+    return render_template("write/write.html")
 
 
 # 게시글 작성 POST처리
@@ -82,9 +82,8 @@ def detail(post_id):
 
     authors = mongo.db.hr.find({"_id": {"$in": author_ids}})
     author_map = {author["_id"]: author["name"] for author in authors}
-    
-    user_name = current_user.name
-    return render_template("write/detail.html", post=post, user_name=user_name, author_map=author_map)
+
+    return render_template("write/detail.html", post=post, author_map=author_map)
 
 
 # 댓글 작성 POST처리

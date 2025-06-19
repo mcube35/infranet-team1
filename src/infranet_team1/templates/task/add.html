@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>업무 등록</title>
-</head>
-<body>
+{% extends "layout.html" %}
+
+{% block title %}업무 등록{% endblock %}
+
+{% block content %}
     <h2>📝 업무 추가</h2>
     <form method="POST" enctype="multipart/form-data">
         <label>제목: <input type="text" name="title" required></label><br><br>
@@ -43,5 +41,4 @@
         <button type="submit">등록</button>
         <a href="{{ url_for('task.home') }}">취소</a>
     </form>
-</body>
-</html>
+{% endblock %}

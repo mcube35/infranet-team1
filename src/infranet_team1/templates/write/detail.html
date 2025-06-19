@@ -1,4 +1,4 @@
-{% extends "write/base.html" %}
+{% extends "layout.html" %}
 
 {% block title %}{{ post.title }} - 커뮤니티{% endblock %}
 
@@ -41,7 +41,6 @@
 
     <h4>댓글 작성</h4>
     <form method="POST">
-        <label>작성자: {{user_name}}</label><br/>
         <label>내용:<br/>
             <textarea name="comment_content" rows="4" required></textarea>
         </label><br/>
