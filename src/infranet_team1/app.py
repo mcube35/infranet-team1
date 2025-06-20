@@ -1,9 +1,8 @@
 from datetime import timedelta
 from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, current_user
-from db import mongo, task_repo
+from db import mongo
 
-from repository.task_repo import TaskRepository
 from routes.write_route import write_bp
 from routes.task_route import task_bp
 from routes.issue_route import issue_bp
@@ -27,7 +26,6 @@ app.config.update(
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 
 mongo.init_app(app)
-task_repo = TaskRepository(mongo.db.tasks)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "auth.login"
