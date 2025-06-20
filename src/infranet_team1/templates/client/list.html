@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>고객사 목록</title>
+</head>
+<body>
+
+  <h1>고객사 목록</h1>
+
+  <form method="get" action="{{ url_for('client.show_list') }}">
+    <input type="text" name="search" placeholder="고객사명 또는 부서 검색" value="{{ search }}">
+    <button type="submit">검색</button>
+    {% if search %}
+      <a href="{{ url_for('client.show_list') }}">초기화</a>
+    {% endif %}
+  </form>
+
+  {% if clients %}
+  <table border="1">
+    <thead>
+      <tr>
+        <th>고객사명</th>
+        <th>부서</th>
+        <th>계약 상태</th>
+        <th>계약 시작일</th>
+        <th>계약 종료일</th>
+        <th>상세</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for client in clients %}
+      <tr>
+        <td>{{ client.company_name }}</td>
+        <td>{{ client.department }}</td>
+        <td>{{ client.contract.status }}</td>
+        <td>{{ client.contract.start_date }}</td>
+        <td>{{ client.contract.end_date }}</td>
+        <td><a href="{{ url_for('client.detail', id=client.id) }}">보기</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>고객사 정보가 없습니다.</p>
+  {% endif %}
+
+</body>
+</html>

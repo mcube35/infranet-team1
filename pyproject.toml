@@ -15,7 +15,8 @@ dependencies = [
     "bcrypt (>=4.3.0,<5.0.0)",
     "flask-wtf (>=1.2.2,<2.0.0)",
     "wtforms (>=3.2.1,<4.0.0)",
-    "matplotlib (>=3.10.3,<4.0.0)"
+    "matplotlib (>=3.10.3,<4.0.0)",
+    "pydantic (>=2.11.7,<3.0.0)"
 ]
 
 [tool.poetry]
