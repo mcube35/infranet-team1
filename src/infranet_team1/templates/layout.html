@@ -120,8 +120,8 @@
       <details open>
         <summary>>👥 인사관리</summary>
         <ul>
-          <li><a href="{{ url_for('hr.attendance') }}">내 근태관리</a></li>
-          <li><a href="#">내 휴가 신청 / 조회</a></li>
+          <li><a href="{{ url_for('att.show_list') }}">내 근태관리</a></li>
+          <li><a href="{{ url_for('vacation.show_list') }}">내 휴가 신청 / 조회</a></li>
           <li><a href="#"></a></li>
 
           {% if current_user.role in ['admin', 'system'] %}

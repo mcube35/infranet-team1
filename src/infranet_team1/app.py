@@ -9,8 +9,8 @@ from routes.issue_route import issue_bp
 from routes.client_route import client_bp
 from routes.auth_route import auth_bp
 
-from routes.hr.bp import hr_bp
-import routes.hr.att_route
+from routes.hr.att_route import att_bp
+from routes.hr.vc_route import vacation_bp
 
 from bson.objectid import ObjectId
 from models.user import User
@@ -52,7 +52,8 @@ def home():
 
 app.register_blueprint(write_bp, url_prefix="/write")
 app.register_blueprint(task_bp, url_prefix="/task")
-app.register_blueprint(hr_bp, url_prefix="/hr")
+app.register_blueprint(att_bp)
+app.register_blueprint(vacation_bp)
 app.register_blueprint(issue_bp, url_prefix="/issue")
 app.register_blueprint(client_bp, url_prefix="/client")
 app.register_blueprint(auth_bp, url_prefix="/auth")
