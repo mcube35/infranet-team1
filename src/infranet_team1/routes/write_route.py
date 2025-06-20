@@ -39,18 +39,12 @@ def home():
 # 게시글 작성 폼
 @write_bp.route("/new", methods=["GET"])
 def write_form():
-    if not current_user.is_authenticated:
-        return "로그인을 해주세요"
-    
     return render_template("write/write.html")
 
 
 # 게시글 작성 POST처리
 @write_bp.route("/new", methods=["POST"])
 def save_post():
-    if not current_user.is_authenticated:
-        return "로그인을 해주세요"
-    
     title = request.form.get("title").strip()
     content = request.form.get("content").strip()
 

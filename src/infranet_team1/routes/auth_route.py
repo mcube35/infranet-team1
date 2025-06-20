@@ -84,7 +84,7 @@ def login_post():
         return redirect(url_for("auth.login_get"))
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()

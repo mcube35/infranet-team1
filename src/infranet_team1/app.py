@@ -1,9 +1,9 @@
 from datetime import timedelta
-from flask import Flask, render_template
-from flask_wtf import CSRFProtect
+from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, current_user
-from db import mongo
+from db import mongo, task_repo
 
+from repository.task_repo import TaskRepository
 from routes.write_route import write_bp
 from routes.task_route import task_bp
 from routes.issue_route import issue_bp
@@ -11,7 +11,6 @@ from routes.client_route import client_bp
 from routes.auth_route import auth_bp
 
 from routes.hr.bp import hr_bp
-import routes.hr.home_route
 import routes.hr.att_route
 
 from bson.objectid import ObjectId
@@ -28,6 +27,7 @@ app.config.update(
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 
 mongo.init_app(app)
+task_repo = TaskRepository(mongo.db.tasks)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "auth.login"
@@ -39,6 +39,14 @@ def load_user(user_id):
     if user_data:
         return User(user_data)
     return None
+
+@app.before_request
+def require_login():
+    allowed_routes = ['auth.login', 'auth.register', 'static']
+    if (not current_user.is_authenticated 
+        and request.endpoint 
+        and not any(request.endpoint.startswith(route) for route in allowed_routes)):
+        return redirect(url_for('auth.login_get'))
 
 @app.route("/")
 def home():
