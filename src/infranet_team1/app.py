@@ -15,6 +15,10 @@ import routes.hr.att_route
 from bson.objectid import ObjectId
 from models.user import User
 
+import matplotlib
+matplotlib.use('Agg')
+matplotlib.rcParams["font.family"] = "Malgun Gothic"
+
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/infranet"
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"

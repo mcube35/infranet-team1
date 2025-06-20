@@ -31,7 +31,7 @@
     </form>
 
     <br>
-    <a href="{{ url_for('task.add') }}">➕ 업무 추가</a>
+    <a href="{{ url_for('task.add_form') }}">➕ 업무 추가</a>
 
     <!-- 업무 리스트 테이블 -->
     <table border="1" cellpadding="5" cellspacing="0">
@@ -63,7 +63,9 @@
                 </td>
                 <td>
                     <a href="{{ url_for('task.edit', task_id=task._id) }}">수정</a> /
-                    <a href="{{ url_for('task.delete', task_id=task._id) }}" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
+                    <form action="{{ url_for('task.delete', task_id=task._id) }}" method="post" style="display:inline;" onsubmit="return confirm('삭제하시겠습니까?')">
+                        <button type="submit" class="contrast outline" style="padding: 2px 6px; font-size: 12px; width: auto;">삭제</button>
+                    </form>
                 </td>
             </tr>
             {% else %}
