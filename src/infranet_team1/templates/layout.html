@@ -85,48 +85,91 @@
 
 <div class="layout">
 
-  <!-- ✅ 사이드바 -->
+  <!-- 사이드바 -->
   <aside style="padding: 1rem;">
     <nav>
       <details open>
-        <summary>📁 커뮤니티</summary>
+        <summary>💬 커뮤니티</summary>
         <ul>
-          <li><a href="{{ url_for('write.home') }}">게시판</a></li>
+          <li><a href="{{ url_for('write.home') }}">자유게시판</a></li>
         </ul>
       </details>
 
+      <hr>
+
       <details open>
-        <summary>📁 업무관리</summary>
+        <summary>🐞 이슈 관리</summary>
         <ul>
-          <li><a href="{{ url_for('task.home') }}">업무 현황</a></li>
+          <li><a href="{{ url_for('issue.home') }}">이슈 조회 및 관리</a></li>
+          <li><a href="#">이슈 통계</a></li>
         </ul>
       </details>
 
-      {% if current_user.role == 'admin' %}
+      <hr>
+
       <details open>
-        <summary>📁 관리자 전용</summary>
+        <summary>📋 업무관리</summary>
         <ul>
-          <li><a href="{{ url_for('auth.register_form') }}">계정 등록</a></li>
+          <li><a href="#">업무 조회 및 관리</a></li>
+          <li><a href="{{ url_for('task.home') }}">업무 통계</a></li>
         </ul>
       </details>
-      {% endif %}
+
+      <hr>
+
+      <details open>
+        <summary>>👥 인사관리</summary>
+        <ul>
+          <li><a href="{{ url_for('hr.attendance') }}">내 근태관리</a></li>
+          <li><a href="#">내 휴가 신청 / 조회</a></li>
+          <li><a href="#"></a></li>
+
+          {% if current_user.role in ['admin', 'system'] %}
+            <li><a href="#">🔒 직원 정보 조회 및 관리</a></li>
+            <li><a href="#">🔒 휴가 신청 승인 / 거절</a></li>
+            <li><a href="#">🔒 인사 통계 보기</a></li>
+          {% endif %}
+
+          {% if current_user.role == 'system' %}
+            <li><a href="#">👑 직원 권한 관리</a></li>
+          {% endif %}
+        </ul>
+      </details>
     </nav>
   </aside>
 
-  <!-- ✅ 우측 영역 -->
+  <!-- 우측 영역 -->
   <div style="display: flex; flex-direction: column;">
 
-    <!-- 사용자 아이콘 -->
-    <header style="display: flex; justify-content: flex-end; align-items: center; padding: 1rem; border-bottom: 1px solid #eee;">
-      <div class="user-box">
-        <img src="{{ url_for('static', filename='img/1557.png') }}" alt="사용자 아바타" class="avatar" />
-        <div class="user-info">
-          <strong>{{ current_user.name }}</strong><br>
-          {{ current_user.email }}<br>
-          권한: {{ current_user.role }}
+    {% if current_user.is_authenticated %}
+      <!-- 사용자 아이콘 -->
+      <header style="display: flex; justify-content: flex-end; align-items: center; padding: 1rem; border-bottom: 1px solid #eee; gap: 0.5rem;">
+        <form action="{{ url_for('auth.logout') }}" method="post" style="margin: 0;">
+          <button type="submit" style="
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0;
+            margin-right: 0.5rem;
+          " title="로그아웃">
+            로그아웃
+          </button>
+        </form>
+
+        <div class="user-box" style="position: relative; cursor: pointer;">
+          <img src="{{ url_for('static', filename='img/user_icon.png') }}" alt="사용자 아바타" class="avatar" style="width: 32px; height: 32px; border-radius: 50%;" />
+          <div class="user-info" style="position: absolute; top: 110%; right: 0; background: white; border: 1px solid #ccc; padding: 0.5rem; white-space: nowrap;">
+            <strong>{{ current_user.name }}</strong><br>
+            {{ current_user.email }}<br>
+            권한: {{ current_user.role }}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+    {% endif %}
+
 
     <!-- 메인 콘텐츠 삽입 -->
     <main style="padding: 2rem;">

@@ -4,7 +4,15 @@ from flask_wtf import CSRFProtect
 from flask_login import LoginManager, current_user
 from db import mongo
 
-from routes import write_bp, task_bp, issue_bp, hr_bp, client_bp, auth_bp
+from routes.write_route import write_bp
+from routes.task_route import task_bp
+from routes.issue_route import issue_bp
+from routes.client_route import client_bp
+from routes.auth_route import auth_bp
+
+from routes.hr.bp import hr_bp
+import routes.hr.home_route
+import routes.hr.att_route
 
 from bson.objectid import ObjectId
 from models.user import User

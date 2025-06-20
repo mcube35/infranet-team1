@@ -3,6 +3,5 @@
 {% block title %}홈페이지{% endblock %}
 
 {% block content %}
-  <h1>환영합니다!</h1>
-  <p>이곳은 메인 콘텐츠 영역입니다.</p>
+  <h1>환영합니다 {{ current_user.name }}님!</h1>
 {% endblock %}
