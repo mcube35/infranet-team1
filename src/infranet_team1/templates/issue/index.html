@@ -1,11 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이슈 메인화면</title>
-</head>
-<body>
-    <h1>이슈 메인화면</h1>
-</body>
-</html>
+{% extends "layout.html" %}
+
+{% block title %}이슈 모음집{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="content-sections">
+        <article class="content-card back-family">
+            <div class="pin"></div>
+            <h2>Back family</h2>
+            <div class="issue-category">
+                <h3><a href="{{ url_for('issue.list') }}" class="clickable-issue">신규 이슈</a></h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>  
+                    <li>LOELOELOELOELOEO</li>
+                    <li>DLODLO</li>
+                </ul>
+            </div>
+            <div class="issue-category">
+                <h3>진행중인 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>-</li>
+                </ul>
+            </div>
+            <div class="issue-category">
+                <h3>퇴마된 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>-</li>
+                </ul>
+            </div>
+        </article>
+
+        <article class="content-card front-family">
+            <div class="pin"></div>
+            <h2>Front family</h2>
+            <div class="issue-category">
+                <h3>신규 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>DLODLO</li>
+                </ul>
+            </div>
+            <div class="issue-category">
+                <h3>진행중인 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>-</li>
+                </ul>
+            </div>
+            <div class="issue-category">
+                <h3>퇴마된 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>-</li>
+                </ul>
+            </div>
+        </article>
+
+        <article class="content-card publisher-family">
+            <div class="pin"></div>
+            <h2>Publisher family</h2>
+            <div class="issue-category">
+                <h3>신규 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>DLODLO</li>
+                </ul>
+            </div>
+            <div class="issue-category">
+                <h3>진행중인 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>-</li>
+                </ul>
+            </div>
+            <div class="issue-category">
+                <h3>퇴마된 이슈</h3>
+                <ul class="issue-list">
+                    <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>
+                    <li>LOELOELOELOELOEO</li>
+                    <li>-</li>
+                </ul>
+            </div>
+        </article>
+    </section>
+</div>
+{% endblock %}
