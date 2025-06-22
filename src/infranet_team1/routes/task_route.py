@@ -1,7 +1,7 @@
 from io import BytesIO
 from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response, current_app
 from matplotlib import pyplot as plt
-from db import mongo
+from db import mongo_db
 from bson.objectid import ObjectId
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -21,6 +21,11 @@ task_bp = Blueprint('task', __name__)
 #   "file": "첨부파일 포함" | "첨부파일 없음"
 # }
 
+def get_tasks_collection():
+    return mongo_db["tasks"]
+
+
+# 업무 메인화면
 @task_bp.route('/', methods=['GET'])
 def home():
     team_filter = request.args.get('team')
@@ -36,7 +41,7 @@ def home():
     if start_date and end_date:
         query['due_date'] = {"$gte": start_date, "$lte": end_date}
 
-    task_list = mongo.db.tasks.find(query).sort("due_date", -1)
+    task_list = get_tasks_collection().find(query).sort("due_date", -1)
     return render_template('task/index.html', tasks=task_list)
 
 
@@ -67,13 +72,13 @@ def add():
     else:
         data['file'] = '첨부파일 없음'
 
-    mongo.db.tasks.insert_one(data)
+    get_tasks_collection().insert_one(data)
     return redirect(url_for('task.home'))
 
 # 업무 수정 폼
 @task_bp.route('/edit/<task_id>', methods=['GET'])
 def edit_form(task_id):
-    task = mongo.db.tasks.find_one({'_id': ObjectId(task_id)})
+    task = get_tasks_collection().find_one({'_id': ObjectId(task_id)})
     return render_template('task/edit.html', task=task)
 
 # 업무 수정 처리 POST함수
@@ -95,13 +100,13 @@ def edit(task_id):
         file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
         update['file'] = filename
 
-    mongo.db.tasks.update_one({'_id': ObjectId(task_id)}, {'$set': update})
+    get_tasks_collection().update_one({'_id': ObjectId(task_id)}, {'$set': update})
     return redirect(url_for('task.home'))
 
 # 업무 삭제 처리 POST함수
 @task_bp.route('/delete/<task_id>', methods=['POST'])
 def delete(task_id):
-    mongo.db.tasks.delete_one({'_id': ObjectId(task_id)})
+    get_tasks_collection().delete_one({'_id': ObjectId(task_id)})
     return redirect(url_for('task.home'))
 
 
@@ -112,7 +117,7 @@ def uploaded_file(filename):
 
 @task_bp.route('/chart-image', methods=['GET'])
 def chart_image():
-    result = list(mongo.db.tasks.aggregate([
+    result = list(get_tasks_collection().aggregate([
         {"$group": {"_id": {"date": "$due_date", "status": "$status"}, "count": {"$sum": 1}}},
         {"$sort": {"_id.date": 1}}
     ]))

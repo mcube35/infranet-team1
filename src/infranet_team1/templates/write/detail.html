@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
 
 {% block title %}{{ post.title }} - 커뮤니티{% endblock %}
 
@@ -31,13 +31,13 @@
         <li>
             <b>{{ author_map[comment.author_id] if comment.author_id in author_map else '알 수 없음' }}</b>
             <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-            <pre>{{ comment.content }}</pre>
+            <pre class="small_ui">{{ comment.content }}</pre>
 
-            {% if comment.author_id == current_user.id %}
+            {% if comment.author_id|string == current_user.id %}
             <!-- 댓글 삭제 버튼 (본인만 보임) -->
             <form method="POST" action="{{ url_for('write.delete_comment', post_id=post._id) }}" style="display:inline;">
                 <input type="hidden" name="comment_id" value="{{ comment.comment_id }}">
-                <button type="submit" onclick="return confirm('댓글을 삭제하시겠습니까?')">댓글 삭제</button>
+                <button type="submit" class="small_ui" onclick="return confirm('댓글을 삭제하시겠습니까?')">댓글 삭제</button>
             </form>
             {% endif %}
         </li>

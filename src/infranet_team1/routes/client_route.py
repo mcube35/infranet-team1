@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, redirect, render_template, request, url_for
 from bson.objectid import ObjectId
-from db import mongo
+from db import mongo_db
 
 client_bp = Blueprint("client", __name__)
 
@@ -35,82 +35,10 @@ client_bp = Blueprint("client", __name__)
 #   ]
 # }
 
+def get_clients_collection():
+    return mongo_db["clients"]
 
-from typing import List, Optional
-from datetime import datetime
-from bson import ObjectId
-from pydantic import BaseModel, Field, field_validator
-
-def objectid_str(obj):
-    if isinstance(obj, ObjectId):
-        return str(obj)
-    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
-
-class Attachment(BaseModel):
-    file_id: ObjectId = Field(...)
-    file_name: str
-    uploaded_at: Optional[datetime]
-
-    @field_validator("file_id", mode="before")
-    @classmethod
-    def validate_file_id(cls, v):
-        if isinstance(v, ObjectId):
-            return v
-        return ObjectId(str(v))
-
-    model_config = {
-        "arbitrary_types_allowed": True,
-        "json_encoders": {
-            ObjectId: objectid_str,
-            datetime: lambda v: v.isoformat() if v else None,
-        },
-    }
-
-class Contract(BaseModel):
-    status: str
-    start_date: Optional[datetime]
-    end_date: Optional[datetime]
-
-    model_config = {
-        "arbitrary_types_allowed": True,
-        "json_encoders": {
-            ObjectId: objectid_str,
-            datetime: lambda v: v.isoformat() if v else None,
-        },
-    }
-
-class Client(BaseModel):
-    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
-    company_name: str
-    department: str
-    contact_person: Optional[str] = ""
-    phone: Optional[str] = ""
-    email: Optional[str] = ""
-    tech_stack: List[str] = []
-    notes: Optional[str] = ""
-    contract: Contract
-    contract_file_id: Optional[ObjectId] = None
-    attachments: List[Attachment] = []
-
-    @field_validator("id", "contract_file_id", mode="before")
-    @classmethod
-    def validate_objectid(cls, v):
-        if v is None:
-            return None
-        if isinstance(v, ObjectId):
-            return v
-        return ObjectId(str(v))
-
-    model_config = {
-        "populate_by_name": True,
-        "arbitrary_types_allowed": True,
-        "json_encoders": {
-            ObjectId: objectid_str,
-            datetime: lambda v: v.isoformat() if v else None,
-        },
-    }
-
-
+# 고객사 목록 리스트화면
 @client_bp.route("/list", methods=['GET'])
 def show_list():
     search = request.args.get("search", "").strip()
@@ -119,21 +47,14 @@ def show_list():
         {"department": {"$regex": search, "$options": "i"}}
     ]} if search else {}
 
-    docs = mongo.db.clients.find(query)
-    clients = [Client(**doc) for doc in docs]
-    return render_template("client/list.html", clients=clients, search=search)
+    docs = list(get_clients_collection().find(query))
+    return render_template("client/list.html", clients=docs, search=search)
 
-
+# 고객사 목록 상세보기
 @client_bp.route("/<id>", methods=['GET'])
 def detail(id):
-    try:
-        obj_id = ObjectId(id)
-    except Exception:
-        return "잘못된 ID 형식입니다.", 400
-
-    doc = mongo.db.clients.find_one({"_id": obj_id})
+    doc = get_clients_collection().find_one({"_id": ObjectId(id)})
     if not doc:
         return "해당 고객을 찾을 수 없습니다.", 404
 
-    client = Client(**doc)
-    return render_template("client/detail.html", client=client)
+    return render_template("client/detail.html", client_doc=doc)

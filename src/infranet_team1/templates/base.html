@@ -11,8 +11,15 @@
     }
 
     button, input, select, textarea {
-    font-size: 1rem;
-    padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+      padding: 0.4rem 0.6rem;
+    }
+
+    .small_ui {
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     table {
@@ -118,11 +125,20 @@
       <hr>
 
       <details open>
-        <summary>>👥 인사관리</summary>
+        <summary>🏢 고객사 관리</summary>
+        <ul>
+          <li><a href="{{ url_for('client.show_list') }}">고객사 조회 및 관리</a></li>
+          <li><a href="#">업무 통계</a></li>
+        </ul>
+      </details>
+
+      <hr>
+
+      <details open>
+        <summary>👥 인사관리</summary>
         <ul>
           <li><a href="{{ url_for('att.show_list') }}">내 근태관리</a></li>
           <li><a href="{{ url_for('vacation.show_list') }}">내 휴가 신청 / 조회</a></li>
-          <li><a href="#"></a></li>
 
           {% if current_user.role in ['admin', 'system'] %}
             <li><a href="#">🔒 직원 정보 조회 및 관리</a></li>

@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
 
 {% block title %}이슈 모음집{% endblock %}
 
@@ -9,7 +9,7 @@
             <div class="pin"></div>
             <h2>Back family</h2>
             <div class="issue-category">
-                <h3><a href="{{ url_for('issue.list') }}" class="clickable-issue">신규 이슈</a></h3>
+                <h3><a href="{{ url_for('issue.show_list') }}" class="clickable-issue">신규 이슈</a></h3>
                 <ul class="issue-list">
                     <li>LL어린이언어ㅓㅣ러ㅣㄴ어라</li>  
                     <li>LOELOELOELOELOEO</li>

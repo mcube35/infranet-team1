@@ -2,7 +2,7 @@ from datetime import timedelta
 import io
 from flask import Flask, jsonify, render_template, request, redirect, url_for, send_file
 from flask_login import LoginManager, current_user
-from db import mongo
+from db import mongo_db
 
 from routes.write_route import write_bp
 from routes.task_route import task_bp
@@ -15,6 +15,8 @@ from routes.hr.vc_route import vacation_bp
 
 from bson.objectid import ObjectId
 from models.user import User
+from path_helper import PROJECT_DIR
+
 
 import matplotlib
 matplotlib.use('Agg')
@@ -22,11 +24,11 @@ matplotlib.rcParams["font.family"] = "Malgun Gothic"
 
 def get_fs():
     from gridfs import GridFS
-    return GridFS(mongo.db)
+    return GridFS(mongo_db)
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/infranet"
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"
+app.config["UPLOAD_FOLDER"] = PROJECT_DIR / "static" / "uploads"
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SECURE=True,
@@ -34,22 +36,20 @@ app.config.update(
 )
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 
-mongo.init_app(app)
-
 login_manager = LoginManager(app)
 login_manager.login_view = "auth.login"
 login_manager.session_protection = "strong"
 
 @login_manager.user_loader
 def load_user(user_id):
-    user_data = mongo.db.hr.find_one({"_id": ObjectId(user_id)})
+    user_data = mongo_db.hr.find_one({"_id": ObjectId(user_id)})
     if user_data:
         return User(user_data)
     return None
 
 @app.before_request
 def require_login():
-    allowed_routes = ['auth.login', 'auth.register', 'static']
+    allowed_routes = ['auth.login_get', 'auth.login_post', 'static']
     if (not current_user.is_authenticated 
         and request.endpoint 
         and not any(request.endpoint.startswith(route) for route in allowed_routes)):

@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
 
 {% block title %}게시글 작성{% endblock %}
 
@@ -30,7 +30,7 @@
     <!-- 버튼 영역 -->
     <div style="margin-top: 20px;">
       <button type="submit">작성</button> <!-- 유효성 검사 후 제출 -->
-      <a href="{{ url_for('issue.list') }}">취소</a>
+      <a href="{{ url_for('issue.show_list') }}">취소</a>
     </div>
   </form>
 </div>

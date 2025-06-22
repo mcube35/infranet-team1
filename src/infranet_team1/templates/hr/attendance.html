@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
 
 {% block title %}근태 관리{% endblock %}
 
@@ -7,31 +7,31 @@
 
 {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
-        <ul class="flash-messages">
+        <ul>
         {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
+            <li>{{ message }}</li>
         {% endfor %}
         </ul>
     {% endif %}
 {% endwith %}
 
-<div class="button-group">
+<div>
     {# 출근하기 버튼 #}
     {% if not today_record or not today_record.get('clock_in') %}
         <form action="{{ url_for('att.clock_in') }}" method="post" style="display:inline;">
-            <button type="submit">출근하기</button>
+            <button class="small_ui" type="submit">출근하기</button>
         </form>
     {% endif %}
 
     {# 퇴근하기 버튼 #}
     {% if today_record and today_record.get('clock_in') and not today_record.get('clock_out') %}
         <form action="{{ url_for('att.clock_out') }}" method="post" style="display:inline;">
-            <button type="submit" class="clock-out">퇴근하기</button>
+            <button class="small_ui" type="submit">퇴근하기</button>
         </form>
     {% endif %}
 </div>
 
-<div class="filter-section">
+<div>
     <form action="{{ url_for('att.show_list') }}" method="get">
         <label for="start_date">시작 날짜:</label>
         <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else '' }}">
@@ -60,7 +60,7 @@
             <td>{{ record.clock_in }}</td>
             <td>{{ record.clock_out }}</td>
             <td>{{ record.working_time }}</td>
-            <td class="status-{{ record.status }}">{{ record.status }}</td>
+            <td>{{ record.status }}</td>
             <td>{{ record.memo }}</td>
         </tr>
         {% else %}
@@ -70,5 +70,4 @@
         {% endfor %}
     </tbody>
 </table>
-</div>
 {% endblock %}

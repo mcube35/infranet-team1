@@ -2,22 +2,24 @@ from bson.objectid import ObjectId
 from flask import Blueprint, render_template, request, redirect, url_for
 from datetime import datetime
 from flask_login import current_user
-from db import mongo
+from db import mongo_db
 
 att_bp = Blueprint('att', __name__, url_prefix="/hr/att")
 
 def get_att_collection():
-    return mongo.db.att
+    return mongo_db["attendance"]
 
+
+# 근태목록 보기
 @att_bp.route("/", methods=["GET"])
 def show_list():
     today_date_str = datetime.now().strftime('%Y-%m-%d')
-    today_record = get_att_collection().find_one({"user_id": current_user.id, "date": today_date_str})
+    today_record = get_att_collection().find_one({"user_id": ObjectId(current_user.id), "date": today_date_str})
 
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
 
-    query = {"user_id": current_user.id}
+    query = {"user_id": ObjectId(current_user.id)}
     if start_date_str and end_date_str:
         query["date"] = {"$gte": start_date_str, "$lte": end_date_str}
     elif start_date_str:
@@ -57,6 +59,7 @@ def show_list():
     )
 
 
+# 퇴근시간 - 출근시간 계산해주는 함수
 def calc_working_min(clock_in_dt, clock_out_dt):
     """
     출근 시간과 퇴근 시간을 기준으로 근무 시간을 분 단위로 계산합니다.
@@ -69,7 +72,7 @@ def calc_working_min(clock_in_dt, clock_out_dt):
 
     return max(0, total_minutes) # 근무 시간이 음수가 되지 않도록
 
-
+# 출근시간으로 상태 체크
 def get_att_status(clock_in_dt):
     """
     출근 시간을 기준으로 '정상' 또는 '지각' 상태를 반환합니다.
@@ -94,7 +97,7 @@ def clock_in():
     today_date_str = now.strftime('%Y-%m-%d')
 
     # 오늘 사용자의 출근 기록이 있는지 확인
-    existing_record = get_att_collection().find_one({"user_id": current_user.id, "date": today_date_str})
+    existing_record = get_att_collection().find_one({"user_id": ObjectId(current_user.id), "date": today_date_str})
 
     if not existing_record:
         status = get_att_status(now) # 출근 시간에 따른 상태 결정
@@ -109,7 +112,7 @@ def clock_in():
         else: # 완전히 새로운 출근 기록
             new_att_doc = {
                 "_id": ObjectId(), # 새로운 ObjectId 생성
-                "user_id": current_user.id, # 현재 사용자의 ObjectId
+                "user_id": ObjectId(current_user.id), # 현재 사용자의 ObjectId
                 "date": today_date_str,
                 "clock_in": now,
                 "clock_out": None, # 퇴근 전이므로 None
@@ -128,7 +131,7 @@ def clock_out():
     today_date_str = now.strftime('%Y-%m-%d')
 
     # 오늘 사용자의 근태 기록을 찾아옴
-    att_record = get_att_collection().find_one({"user_id": current_user.id, "date": today_date_str})
+    att_record = get_att_collection().find_one({"user_id": ObjectId(current_user.id), "date": today_date_str})
 
     if att_record.get('clock_in', None):
         clock_in_dt = att_record.get('clock_in', None)
