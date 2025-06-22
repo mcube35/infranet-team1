@@ -32,6 +32,14 @@
             <b>{{ author_map[comment.author_id] if comment.author_id in author_map else '알 수 없음' }}</b>
             <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
             <pre>{{ comment.content }}</pre>
+
+            {% if comment.author_id == current_user.id %}
+            <!-- 댓글 삭제 버튼 (본인만 보임) -->
+            <form method="POST" action="{{ url_for('write.delete_comment', post_id=post._id) }}" style="display:inline;">
+                <input type="hidden" name="comment_id" value="{{ comment.comment_id }}">
+                <button type="submit" onclick="return confirm('댓글을 삭제하시겠습니까?')">댓글 삭제</button>
+            </form>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>
@@ -40,11 +48,12 @@
     {% endif %}
 
     <h4>댓글 작성</h4>
-    <form method="POST">
+    <form method="POST" action="{{ url_for('write.add_comment', post_id=post._id) }}"">
         <label>내용:<br/>
             <textarea name="comment_content" rows="4" required></textarea>
         </label><br/>
         <button type="submit">댓글 등록</button>
     </form>
 </section>
+
 {% endblock %}

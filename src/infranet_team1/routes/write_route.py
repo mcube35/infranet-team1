@@ -28,12 +28,12 @@ write_bp = Blueprint("write", __name__)
 @write_bp.route("/")
 def home():
     posts = list(mongo.db.posts.find().sort("created_at", -1))
-    author_ids = list({post["author_id"] for post in posts})
+    author_ids = list(set({post["author_id"] for post in posts}))
 
     authors = mongo.db.hr.find({"_id": {"$in": author_ids}})
     author_map = {author["_id"]: author["name"] for author in authors}
 
-    return render_template("write/index.html", posts = posts, author_map=author_map)
+    return render_template("write/index.html", posts=posts, author_map=author_map)
 
 
 # 게시글 작성 폼
@@ -54,7 +54,7 @@ def save_post():
     post = {
         "title": title,
         "content": content,
-        "author_id": ObjectId(current_user.id),
+        "author_id": current_user.id,
         "tags": [],  # 기본은 빈 리스트
         "created_at": datetime.datetime.utcnow(),
         "updated_at": None,
@@ -72,7 +72,7 @@ def detail(post_id):
     if not post:
         abort(404)
 
-    author_ids = list({comment["author_id"] for comment in post.get("comments", [])})
+    author_ids = list(set({comment["author_id"] for comment in post.get("comments", [])}))
 
     authors = mongo.db.hr.find({"_id": {"$in": author_ids}})
     author_map = {author["_id"]: author["name"] for author in authors}
@@ -81,20 +81,19 @@ def detail(post_id):
 
 
 # 댓글 작성 POST처리
-@write_bp.route("/post/<post_id>", methods=["POST"])
+@write_bp.route("/post/<post_id>/comment", methods=["POST"])
 def add_comment(post_id):
     post = mongo.db.posts.find_one({"_id": ObjectId(post_id)})
     if not post:
         abort(404)
-        
-    comment_content = request.form.get("comment_content")
     
+    comment_content = request.form.get("comment_content")
     if not comment_content:
         return "댓글 내용을 입력하세요.", 400
 
     comment = {
         "comment_id": ObjectId(),
-        "author_id": ObjectId(current_user.id),
+        "author_id": current_user.id,
         "content": comment_content,
         "created_at": datetime.datetime.utcnow()
     }
@@ -104,6 +103,28 @@ def add_comment(post_id):
         {"$push": {"comments": comment}}
     )
     return redirect(url_for("write.detail", post_id=post_id))
+
+# 댓글 삭제 기능 
+@write_bp.route("/post/<post_id>/comment/delete", methods=["POST"])
+def delete_comment(post_id):
+    post = mongo.db.posts.find_one({"_id": ObjectId(post_id)})
+    if not post:
+        abort(404)
+
+    # 해당 댓글을 찾고, 작성자가 본인인지 확인
+    comment_id = request.form.get("comment_id")
+    target_comment = next((c for c in post.get("comments", []) if str(c["comment_id"]) == comment_id), None)
+    if not target_comment or target_comment["author_id"] != current_user.id:
+        abort(403)  # 권한 없음
+
+    # 댓글 삭제
+    mongo.db.posts.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$pull": {"comments": {"comment_id": ObjectId(comment_id)}}}
+    )
+
+    return redirect(url_for("write.detail", post_id=post_id))
+
 
 
 # 게시글 수정 폼
