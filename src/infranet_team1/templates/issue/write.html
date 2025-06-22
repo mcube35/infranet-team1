@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block title %}게시글 작성{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>새 게시글 작성</h1>
+
+  <!-- 게시글 작성 폼 -->
+  <form id="postForm" method="POST" action="{{ url_for('issue.detail') }}" onsubmit="return validateForm()">
+    <!-- 카테고리 입력 필드 (비활성화됨) -->
+    <div>
+      <label>카테고리:</label>
+      <input type="text" value="{{ category_name }}" disabled class="category-input" />
+      <input type="hidden" name="category" value="1" />
+    </div>
+
+    <!-- 제목 입력 필드 -->
+    <div>
+      <label for="postTitle">제목:</label>
+      <input type="text" id="postTitle" name="title" placeholder="게시글 제목을 입력하세요" />
+    </div>
+
+    <!-- 내용 입력 필드 (텍스트 영역) -->
+    <div>
+      <label for="postContent">내용:</label>
+      <textarea id="postContent" name="content" placeholder="게시글 내용을 작성하세요" rows="8"></textarea>
+    </div>
+
+    <!-- 버튼 영역 -->
+    <div style="margin-top: 20px;">
+      <button type="submit">작성</button> <!-- 유효성 검사 후 제출 -->
+      <a href="{{ url_for('issue.list') }}">취소</a>
+    </div>
+  </form>
+</div>
+
+<!-- 커스텀 모달 UI (스타일 없이 기본 HTML 요소만) -->
+<div id="customModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+  <div style="background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <p id="modalMessage" style="margin-bottom: 15px;"></p>
+    <button onclick="hideModal()">확인</button>
+  </div>
+</div>
+
+<!-- JavaScript 스크립트 -->
+<script>
+  // 커스텀 모달을 표시하는 함수
+  function showModal(message) {
+    document.getElementById('modalMessage').innerText = message;
+    document.getElementById('customModal').style.display = 'flex'; // 모달 표시
+  }
+
+  // 커스텀 모달을 숨기는 함수
+  function hideModal() {
+    document.getElementById('customModal').style.display = 'none'; // 모달 숨기기
+  }
+
+  // 폼 유효성 검사 함수
+  function validateForm() {
+    const titleInput = document.getElementById('postTitle');
+    const contentTextarea = document.getElementById('postContent');
+
+    const title = titleInput.value.trim(); // 제목 값 가져오기 (공백 제거)
+    const content = contentTextarea.value.trim(); // 내용 값 가져오기 (공백 제거)
+
+    // 제목이 비어있는지 확인
+    if (title === '') {
+      showModal('제목을 입력해주세요.'); // 커스텀 모달로 메시지 표시
+      titleInput.focus(); // 제목 입력 필드로 포커스 이동
+      return false; // 폼 제출 중단
+    }
+
+    // 내용이 비어있는지 확인
+    if (content === '') {
+      showModal('내용을 입력해주세요.'); // 커스텀 모달로 메시지 표시
+      contentTextarea.focus(); // 내용 입력 필드로 포커스 이동
+      return false; // 폼 제출 중단
+    }
+
+    // 모든 유효성 검사를 통과하면 폼 제출을 허용
+    // 이때 form 태그의 action 속성(/write)으로 이동합니다.
+    return true;
+  }
+</script>
+{% endblock %}
