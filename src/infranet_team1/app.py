@@ -1,5 +1,6 @@
 from datetime import timedelta
-from flask import Flask, render_template, request, redirect, url_for
+import io
+from flask import Flask, jsonify, render_template, request, redirect, url_for, send_file
 from flask_login import LoginManager, current_user
 from db import mongo
 
@@ -14,6 +15,10 @@ import routes.hr.att_route
 
 from bson.objectid import ObjectId
 from models.user import User
+
+def get_fs():
+    from gridfs import GridFS
+    return GridFS(mongo.db)
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/infranet"
@@ -46,9 +51,24 @@ def require_login():
         and not any(request.endpoint.startswith(route) for route in allowed_routes)):
         return redirect(url_for('auth.login_get'))
 
-@app.route("/")
+@app.route("/", methods=['GET'])
 def home():
     return render_template("index.html", user=current_user)
+
+
+@app.route("/files/<file_id>", methods=['GET'])
+def file_download(file_id):
+    try:
+        fs = get_fs()
+        file_obj = fs.get(ObjectId(file_id))
+        return send_file(
+            io.BytesIO(file_obj.read()),
+            mimetype=file_obj.content_type or "application/octet-stream",
+            download_name=file_obj.filename or "download",
+            as_attachment=True
+        )
+    except Exception:
+        return jsonify({"error": "파일을 찾을 수 없습니다."}), 404
 
 app.register_blueprint(write_bp, url_prefix="/write")
 app.register_blueprint(task_bp, url_prefix="/task")
