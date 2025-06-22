@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block title %}휴가 신청 목록{% endblock %}
+
+{% block content %}
+<h1>📑 휴가 신청 목록</h1>
+
+<p><strong>{{ current_user.name }}</strong>님의 휴가 내역입니다.</p>
+
+<table border="1">
+<thead>
+    <tr>
+    <th>종류</th>
+    <th>기간</th>
+    <th>사유</th>
+    <th>상태</th>
+    </tr>
+</thead>
+<tbody>
+    {% for vacation in vacations %}
+    <tr>
+    <td>{{ vacation.vacation_type }}</td>
+    <td>{{ vacation.start_date }} ~ {{ vacation.end_date }}</td>
+    <td>{{ vacation.reason }}</td>
+    <td>{{ vacation.status }}</td>
+    </tr>
+    {% else %}
+    <tr>
+    <td colspan="4">표시할 휴가 신청이 없습니다.</td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+{% endblock %}

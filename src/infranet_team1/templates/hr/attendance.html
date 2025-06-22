@@ -1,11 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>근태 관리</title>
-</head>
-<body>
-    <h1>근태 관리 페이지입니다</h1>
-</body>
-</html>
+{% extends "layout.html" %}
+
+{% block title %}근태 관리{% endblock %}
+
+{% block content %}
+<h1>근태 관리 페이지</h1>
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
+<div class="button-group">
+    {# 출근하기 버튼 #}
+    {% if not today_record or not today_record.get('clock_in') %}
+        <form action="{{ url_for('att.clock_in') }}" method="post" style="display:inline;">
+            <button type="submit">출근하기</button>
+        </form>
+    {% endif %}
+
+    {# 퇴근하기 버튼 #}
+    {% if today_record and today_record.get('clock_in') and not today_record.get('clock_out') %}
+        <form action="{{ url_for('att.clock_out') }}" method="post" style="display:inline;">
+            <button type="submit" class="clock-out">퇴근하기</button>
+        </form>
+    {% endif %}
+</div>
+
+<div class="filter-section">
+    <form action="{{ url_for('att.show_list') }}" method="get">
+        <label for="start_date">시작 날짜:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else '' }}">
+        <label for="end_date">종료 날짜:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date if end_date else '' }}">
+        <button type="submit">필터링</button>
+    </form>
+</div>
+
+<h3>내 근태 기록</h3>
+<table>
+    <thead>
+        <tr>
+            <th>날짜</th>
+            <th>출근 시간</th>
+            <th>퇴근 시간</th>
+            <th>근무 시간</th>
+            <th>상태</th>
+            <th>비고</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in records %}
+        <tr>
+            <td>{{ record.date }}</td>
+            <td>{{ record.clock_in }}</td>
+            <td>{{ record.clock_out }}</td>
+            <td>{{ record.working_time }}</td>
+            <td class="status-{{ record.status }}">{{ record.status }}</td>
+            <td>{{ record.memo }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6">근태 기록이 없습니다.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
