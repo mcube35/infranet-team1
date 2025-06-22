@@ -1,13 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, jsonify, current_app
+from io import BytesIO
+from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response, current_app
+from matplotlib import pyplot as plt
 from db import mongo
 from bson.objectid import ObjectId
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
-
-import matplotlib
-matplotlib.use('Agg')
-matplotlib.rcParams["font.family"] = "Malgun Gothic"
 
 task_bp = Blueprint('task', __name__)
 
@@ -23,7 +21,7 @@ task_bp = Blueprint('task', __name__)
 #   "file": "첨부파일 포함" | "첨부파일 없음"
 # }
 
-@task_bp.route('/')
+@task_bp.route('/', methods=['GET'])
 def home():
     team_filter = request.args.get('team')
     status_filter = request.args.get('status')
@@ -41,68 +39,78 @@ def home():
     task_list = mongo.db.tasks.find(query).sort("due_date", -1)
     return render_template('task/index.html', tasks=task_list)
 
-@task_bp.route('/add', methods=['GET', 'POST'])
-def add():
-    if request.method == 'POST':
-        data = {
-            'title': request.form['title'],
-            'description': request.form['description'],
-            'status': request.form['status'],
-            'priority': request.form['priority'],
-            'team': request.form['team'],
-            'due_date': datetime.strptime(request.form['due_date'], '%Y-%m-%d'),
-            'created_at': datetime.now(),
-            'updated_at': datetime.now(),
-        }
 
-        file = request.files['file']
-        if file:
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            data['file'] = filename
-        else:
-            data['file'] = '첨부파일 없음'
-
-        mongo.db.tasks.insert_one(data)
-        return redirect(url_for('task.home'))
-
+# 업무 추가 폼
+@task_bp.route('/add', methods=['GET'])
+def add_form():
     return render_template('task/add.html')
 
-@task_bp.route('/edit/<task_id>', methods=['GET', 'POST'])
-def edit(task_id):
+# 업무 추가 처리 POST함수
+@task_bp.route('/add', methods=['POST'])
+def add():
+    data = {
+        'title': request.form['title'],
+        'description': request.form['description'],
+        'status': request.form['status'],
+        'priority': request.form['priority'],
+        'team': request.form['team'],
+        'due_date': datetime.strptime(request.form['due_date'], '%Y-%m-%d'),
+        'created_at': datetime.now(),
+        'updated_at': datetime.now(),
+    }
+
+    file = request.files['file']
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+        data['file'] = filename
+    else:
+        data['file'] = '첨부파일 없음'
+
+    mongo.db.tasks.insert_one(data)
+    return redirect(url_for('task.home'))
+
+# 업무 수정 폼
+@task_bp.route('/edit/<task_id>', methods=['GET'])
+def edit_form(task_id):
     task = mongo.db.tasks.find_one({'_id': ObjectId(task_id)})
-    if request.method == 'POST':
-        update = {
-            'title': request.form['title'],
-            'description': request.form['description'],
-            'status': request.form['status'],
-            'priority': request.form['priority'],
-            'team': request.form['team'],
-            'due_date': datetime.strptime(request.form['due_date'], '%Y-%m-%d'),
-            'updated_at': datetime.now()
-        }
-
-        file = request.files['file']
-        if file:
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-            update['file'] = filename
-
-        mongo.db.tasks.update_one({'_id': ObjectId(task_id)}, {'$set': update})
-        return redirect(url_for('task.home'))
-
     return render_template('task/edit.html', task=task)
 
-@task_bp.route('/delete/<task_id>')
+# 업무 수정 처리 POST함수
+@task_bp.route('/edit/<task_id>', methods=['POST'])
+def edit(task_id):
+    update = {
+        'title': request.form['title'],
+        'description': request.form['description'],
+        'status': request.form['status'],
+        'priority': request.form['priority'],
+        'team': request.form['team'],
+        'due_date': datetime.strptime(request.form['due_date'], '%Y-%m-%d'),
+        'updated_at': datetime.now()
+    }
+
+    file = request.files['file']
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+        update['file'] = filename
+
+    mongo.db.tasks.update_one({'_id': ObjectId(task_id)}, {'$set': update})
+    return redirect(url_for('task.home'))
+
+# 업무 삭제 처리 POST함수
+@task_bp.route('/delete/<task_id>', methods=['POST'])
 def delete(task_id):
     mongo.db.tasks.delete_one({'_id': ObjectId(task_id)})
     return redirect(url_for('task.home'))
 
-@task_bp.route('/uploads/<filename>')
+
+@task_bp.route('/uploads/<filename>', methods=['GET'])
 def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
-@task_bp.route('/chart-image')
+
+@task_bp.route('/chart-image', methods=['GET'])
 def chart_image():
     result = list(mongo.db.tasks.aggregate([
         {"$group": {"_id": {"date": "$due_date", "status": "$status"}, "count": {"$sum": 1}}},
@@ -123,11 +131,6 @@ def chart_image():
     wait = [data[d]['대기중'] for d in dates]
     doing = [data[d]['진행중'] for d in dates]
     done = [data[d]['완료'] for d in dates]
-    
-    import matplotlib.pyplot as plt
-    from io import BytesIO
-    from flask import Response
-
 
     plt.figure(figsize=(10, 5))
     plt.bar(dates, wait, label='대기중')

@@ -16,6 +16,10 @@ from routes.hr.vc_route import vacation_bp
 from bson.objectid import ObjectId
 from models.user import User
 
+import matplotlib
+matplotlib.use('Agg')
+matplotlib.rcParams["font.family"] = "Malgun Gothic"
+
 def get_fs():
     from gridfs import GridFS
     return GridFS(mongo.db)
