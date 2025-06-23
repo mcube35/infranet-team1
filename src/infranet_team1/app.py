@@ -15,20 +15,15 @@ from routes.hr.vc_route import vacation_bp
 
 from bson.objectid import ObjectId
 from models.user import User
-from path_helper import PROJECT_DIR
+from extension import get_fs
 
 
 import matplotlib
 matplotlib.use('Agg')
 matplotlib.rcParams["font.family"] = "Malgun Gothic"
 
-def get_fs():
-    from gridfs import GridFS
-    return GridFS(mongo_db)
-
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"
-app.config["UPLOAD_FOLDER"] = PROJECT_DIR / "static" / "uploads"
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SECURE=True,
