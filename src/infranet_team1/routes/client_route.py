@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import io
 from flask import Blueprint, redirect, render_template, request, url_for, flash, send_file, jsonify
 from bson.objectid import ObjectId
@@ -28,7 +28,7 @@ def save_contract_files(files):
             contract_files.append({
                 "file_id": file_id,
                 "file_name": file.filename,
-                "uploaded_at": datetime.utcnow()
+                "uploaded_at": datetime.now(timezone.utc)
             })
     return contract_files
 
@@ -41,39 +41,40 @@ def save_attachments(files):
             attachments.append({
                 "file_id": file_id,
                 "file_name": file.filename,
-                "uploaded_at": datetime.utcnow()
+                "uploaded_at": datetime.now(timezone.utc)
             })
     return attachments
 
 # ========== ✅ 고객사 등록 ==========
-@client_bp.route("/create", methods=["GET", "POST"])
-def create():
-    if request.method == "POST":
-        form = request.form
-        contract_files = save_contract_files(request.files.getlist("contract_files"))
-
-        client_doc = {
-            "company_name": form.get("company_name", "").strip(),
-            "department": form.get("department", "").strip(),
-            "contact_person": form.get("contact_person", "").strip(),
-            "phone": form.get("phone", "").strip(),
-            "email": form.get("email", "").strip(),
-            "tech_stack": [s.strip() for s in form.get("tech_stack", "").split(",") if s.strip()],
-            "notes": form.get("notes", "").strip(),
-            "contract": {
-                "status": form.get("contract_status"),
-                "start_date": parse_date(form.get("contract_start_date")),
-                "end_date": parse_date(form.get("contract_end_date"))
-            },
-            "contract_files": contract_files,
-            "attachments": save_attachments(request.files.getlist("attachments"))
-        }
-
-        get_clients_collection().insert_one(client_doc)
-        flash("고객사 등록이 완료되었습니다.", "success")
-        return redirect(url_for("client.show_list"))
-
+@client_bp.route("/create", methods=["GET"])
+def create_form():
     return render_template("client/create.html")
+
+@client_bp.route("/create", methods=["POST"])
+def create():
+    form = request.form
+    contract_files = save_contract_files(request.files.getlist("contract_files"))
+
+    client_doc = {
+        "company_name": form.get("company_name", "").strip(),
+        "department": form.get("department", "").strip(),
+        "contact_person": form.get("contact_person", "").strip(),
+        "phone": form.get("phone", "").strip(),
+        "email": form.get("email", "").strip(),
+        "tech_stack": [s.strip() for s in form.get("tech_stack", "").split(",") if s.strip()],
+        "notes": form.get("notes", "").strip(),
+        "contract": {
+            "status": form.get("contract_status"),
+            "start_date": parse_date(form.get("contract_start_date")),
+            "end_date": parse_date(form.get("contract_end_date"))
+        },
+        "contract_files": contract_files,
+        "attachments": save_attachments(request.files.getlist("attachments"))
+    }
+
+    get_clients_collection().insert_one(client_doc)
+    flash("고객사 등록이 완료되었습니다.", "success")
+    return redirect(url_for("client.show_list"))
 
 # ========== ✅ 고객사 목록 ==========
 @client_bp.route("/list", methods=["GET"])
@@ -109,57 +110,61 @@ def detail(id):
     return render_template("client/detail.html", client_doc=doc)
 
 # ========== ✅ 고객사 수정 ==========
-@client_bp.route("/<id>/edit", methods=["GET", "POST"])
+@client_bp.route("/<id>/edit", methods=["GET"])
+def edit_form(id):
+    collection = get_clients_collection()
+    client_doc = collection.find_one({"_id": ObjectId(id)})
+    if not client_doc:
+        return "해당 고객을 찾을 수 없습니다.", 404
+    return render_template("client/edit.html", client_doc=client_doc)
+
+
+@client_bp.route("/<id>/edit", methods=["POST"])
 def edit(id):
     collection = get_clients_collection()
     client_doc = collection.find_one({"_id": ObjectId(id)})
     if not client_doc:
         return "해당 고객을 찾을 수 없습니다.", 404
-
-    if request.method == "POST":
-        form = request.form
-
-        updated_doc = {
-            "company_name": form.get("company_name", "").strip(),
-            "department": form.get("department", "").strip(),
-            "contact_person": form.get("contact_person", "").strip(),
-            "phone": form.get("phone", "").strip(),
-            "email": form.get("email", "").strip(),
-            "tech_stack": [s.strip() for s in form.get("tech_stack", "").split(",") if s.strip()],
-            "notes": form.get("notes", "").strip(),
-            "contract": {
-                "status": form.get("contract_status"),
-                "start_date": parse_date(form.get("contract_start_date")),
-                "end_date": parse_date(form.get("contract_end_date"))
-            }
+    
+    form = request.form
+    updated_doc = {
+        "company_name": form.get("company_name", "").strip(),
+        "department": form.get("department", "").strip(),
+        "contact_person": form.get("contact_person", "").strip(),
+        "phone": form.get("phone", "").strip(),
+        "email": form.get("email", "").strip(),
+        "tech_stack": [s.strip() for s in form.get("tech_stack", "").split(",") if s.strip()],
+        "notes": form.get("notes", "").strip(),
+        "contract": {
+            "status": form.get("contract_status"),
+            "start_date": parse_date(form.get("contract_start_date")),
+            "end_date": parse_date(form.get("contract_end_date"))
         }
+    }
 
-        # 계약서 삭제
-        delete_contract_ids = request.form.getlist("delete_contract_file_ids")
-        contract_files = client_doc.get("contract_files", [])
-        contract_files = [f for f in contract_files if str(f["file_id"]) not in delete_contract_ids]
+    # 계약서 삭제
+    delete_contract_ids = request.form.getlist("delete_contract_file_ids")
+    contract_files = client_doc.get("contract_files", [])
+    contract_files = [f for f in contract_files if str(f["file_id"]) not in delete_contract_ids]
 
-        # 새 계약서 추가
-        new_contract_files = save_contract_files(request.files.getlist("contract_files"))
-        contract_files += new_contract_files
-        updated_doc["contract_files"] = contract_files
+    # 새 계약서 추가
+    new_contract_files = save_contract_files(request.files.getlist("contract_files"))
+    contract_files += new_contract_files
+    updated_doc["contract_files"] = contract_files
 
-        # 첨부파일 삭제
-        delete_ids = request.form.getlist("delete_file_ids")
-        attachments = client_doc.get("attachments", [])
-        attachments = [f for f in attachments if str(f["file_id"]) not in delete_ids]
+    # 첨부파일 삭제
+    delete_ids = request.form.getlist("delete_file_ids")
+    attachments = client_doc.get("attachments", [])
+    attachments = [f for f in attachments if str(f["file_id"]) not in delete_ids]
 
-        # 첨부파일 추가
-        new_files = request.files.getlist("attachments")
-        attachments += save_attachments(new_files)
-        updated_doc["attachments"] = attachments
+    # 첨부파일 추가
+    new_files = request.files.getlist("attachments")
+    attachments += save_attachments(new_files)
+    updated_doc["attachments"] = attachments
 
-        collection.update_one({"_id": ObjectId(id)}, {"$set": updated_doc})
-        flash("고객사 정보가 수정되었습니다.", "success")
-        return redirect(url_for("client.detail", id=id))
-
-    return render_template("client/edit.html", client_doc=client_doc)
-
+    collection.update_one({"_id": ObjectId(id)}, {"$set": updated_doc})
+    flash("고객사 정보가 수정되었습니다.", "success")
+    return redirect(url_for("client.detail", id=id))
 
 # ========== ✅ 고객사 삭제 ==========
 @client_bp.route("/<id>/delete", methods=["POST"])
