@@ -204,9 +204,11 @@ def delete_comment(post_id):
     comment_id = request.form.get("comment_id")
 
     # 댓글 찾기
-    target_comment = next(
-        (c for c in post.get("comments", []) if str(c["comment_id"]) == comment_id), None
-    )
+    target_comment = None
+    for c in post.get("comments", []):
+        if str(c["comment_id"]) == comment_id:
+            target_comment = c
+            break
     if not target_comment:
         abort(404)
 
