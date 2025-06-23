@@ -65,7 +65,7 @@ def file_download(file_id):
         file_obj = fs.get(ObjectId(file_id))
         return send_file(
             io.BytesIO(file_obj.read()),
-            mimetype=file_obj.content_type or "application/octet-stream",
+            mimetype=file_obj.content_type or "application/ocpython app.pytet-stream",
             download_name=file_obj.filename or "download",
             as_attachment=True
         )
