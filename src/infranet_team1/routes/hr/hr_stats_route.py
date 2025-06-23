@@ -1,100 +1,78 @@
 import io
 from flask import Blueprint, render_template, send_file
 from db import mongo_db
+from datetime import datetime, date
 
-# matplotlib 설정
+# matplotlib 설정 (이전과 동일)
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
 # 한글 폰트 설정
-
 try:
-    font_path = "c:/Windows/Fonts/malgun.ttf" # Windows 예시
+    font_path = "c:/Windows/Fonts/malgun.ttf"
     font_prop = fm.FontProperties(fname=font_path)
     plt.rc('font', family=font_prop.get_name())
+    plt.rcParams['axes.unicode_minus'] = False # 마이너스 기호 깨짐 방지
 except:
-    # 폰트가 없을 경우 기본 폰트 사용
     print("한글 폰트를 찾을 수 없습니다. 차트의 한글이 깨질 수 있습니다.")
 
 hr_stats_bp = Blueprint("hr_stats", __name__, url_prefix="/hr/stats")
 
-# 메인 통계 대시보드 페이지
+# 메인 통계 대시보드 페이지 (변경 없음)
 @hr_stats_bp.route("/")
 def dashboard():
-    # 여기서 필요한 주요 숫자들을 계산해서 전달할 수 있습니다.
     total_employees = mongo_db.hr.count_documents({})
-    return render_template("hr/hr_stats.html", total_employees=total_employees)
+    active_employees = mongo_db.hr.count_documents({"status": "재직중"})
+    return render_template("hr/hr_stats.html", 
+                        total_employees=total_employees,
+                        active_employees=active_employees)
 
-# 부서별 직원 수 차트 이미지를 생성하는 라우트
+# 부서별 직원 수 차트 (변경 없음)
 @hr_stats_bp.route("/charts/employees_by_department.png")
 def chart_employees_by_department():
-    # 1. Aggregation으로 부서별 직원 수 계산
-    pipeline = [
-        {"$group": {"_id": "$department", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}
-    ]
+    pipeline = [{"$group": {"_id": "$department", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
     data = list(mongo_db.hr.aggregate(pipeline))
 
-    # 2. Matplotlib으로 차트 그리기
-    departments = [d['_id'] for d in data]
-    counts = [d['count'] for d in data]
+    if not data: return send_file(io.BytesIO(), mimetype='image/png')
+        
+    labels = [d['_id'] if d['_id'] else '미지정' for d in data]
+    values = [d['count'] for d in data]
 
-    fig, ax = plt.subplots()
-    ax.bar(departments, counts, color='skyblue')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(labels, values, color='skyblue')
     ax.set_ylabel('직원 수')
     ax.set_title('부서별 직원 수')
+    plt.xticks(rotation=45, ha="right")
 
-    # 3. 차트를 이미지 파일(in-memory)로 저장
     img = io.BytesIO()
     fig.savefig(img, format='png', bbox_inches='tight')
     img.seek(0)
-    
-    # 닫아주어 메모리 누수 방지
     plt.close(fig)
-
     return send_file(img, mimetype='image/png')
 
-# ✅ 월별 입사자 vs 퇴사자 수 차트 (신규 추가)
-@hr_stats_bp.route("/charts/monthly_turnover.png")
-def chart_monthly_turnover():
-    # 지난 12개월간의 입사자/퇴사자 데이터를 집계합니다.
+# ✅ 월별 입사자 수 차트 (pandas 없이 구현)
+@hr_stats_bp.route("/charts/monthly_hires.png")
+def chart_monthly_hires():
     pipeline = [
-        {
-            "$project": {
-                "hire_month": {"$dateToString": {"format": "%Y-%m", "date": "$hire_date"}},
-                "is_resigned": {
-                    "$cond": [{"$eq": ["$status", "퇴사"]}, 1, 0]
-                }
-            }
-        },
-        {
-            "$group": {
-                "_id": "$hire_month",
-                "hires": {"$sum": 1}, # 해당 월의 입사자 수는 hire_month 그룹의 총 개수
-            }
-        },
-        {
-            "$sort": {"_id": 1}
-        }
+        {"$project": {"hire_month": {"$dateToString": {"format": "%Y-%m", "date": "$hire_date"}}}},
+        {"$group": {"_id": "$hire_month", "hires": {"$sum": 1}}},
+        {"$sort": {"_id": -1}},
+        {"$limit": 12} # 최근 12개월 데이터만
     ]
-    # 실제 구현에서는 퇴사 날짜 필드가 필요하지만, 여기서는 hire_date를 기준으로 임시 구현합니다.
-    # 더 정확한 구현을 위해서는 hr 컬렉션에 'resignation_date' 필드가 필요합니다.
-    # 지금은 '입사 월별' 인원만 보여주는 것으로 단순화합니다.
+    data = sorted(list(mongo_db.hr.aggregate(pipeline)), key=lambda x: x['_id'])
     
-    hire_data = list(mongo_db.hr.aggregate(pipeline))
-    if not hire_data:
-        return send_file(io.BytesIO(), mimetype='image/png')
+    if not data: return send_file(io.BytesIO(), mimetype='image/png')
 
-    df = pd.DataFrame(hire_data)
-    df = df.rename(columns={"_id": "month", "hires": "입사"})
-    df = df.set_index("month")
+    labels = [d['_id'] for d in data]
+    values = [d['hires'] for d in data]
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    df.plot(kind='bar', ax=ax, color=['#1f77b4'])
-    ax.set_title('월별 입사자 수')
+    ax.plot(labels, values, marker='o', linestyle='-', color='#1f77b4')
+    ax.set_title('월별 입사자 수 (최근 12개월)')
     ax.set_ylabel('인원 수')
     ax.set_xlabel('연-월')
     plt.xticks(rotation=45)
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 
     img = io.BytesIO()
     fig.savefig(img, format='png', bbox_inches='tight')
@@ -102,29 +80,41 @@ def chart_monthly_turnover():
     plt.close(fig)
     return send_file(img, mimetype='image/png')
 
-# ✅ 근속 연수 분포 차트 (신규 추가)
+# ✅ 근속 연수 분포 차트 (pandas 없이 구현)
 @hr_stats_bp.route("/charts/years_of_service.png")
 def chart_years_of_service():
     employees = list(mongo_db.hr.find({"status": "재직중", "hire_date": {"$ne": None}}))
-    
-    if not employees:
-        return send_file(io.BytesIO(), mimetype='image/png')
+    if not employees: return send_file(io.BytesIO(), mimetype='image/png')
 
     today = date.today()
-    service_years = []
+    
+    # 1. 구간별 카운트를 저장할 딕셔너리 초기화
+    labels = ['1년 미만', '1-3년', '3-5년', '5-10년', '10년 이상']
+    service_dist = {label: 0 for label in labels}
+
+    # 2. 각 직원의 근속 연수를 계산하고 구간에 맞게 카운트
     for emp in employees:
         years = (today - emp['hire_date'].date()).days / 365.25
-        service_years.append(years)
+        if years < 1:
+            service_dist['1년 미만'] += 1
+        elif years < 3:
+            service_dist['1-3년'] += 1
+        elif years < 5:
+            service_dist['3-5년'] += 1
+        elif years < 10:
+            service_dist['5-10년'] += 1
+        else:
+            service_dist['10년 이상'] += 1
 
-    bins = [0, 1, 3, 5, 10, float('inf')]
-    labels = ['1년 미만', '1-3년', '3-5년', '5-10년', '10년 이상']
-    
-    # pandas를 사용하여 구간별로 그룹화
-    service_dist = pd.cut(service_years, bins=bins, labels=labels, right=False).value_counts().sort_index()
+    # 3. 데이터가 있는 구간만 차트에 표시
+    final_labels = [k for k, v in service_dist.items() if v > 0]
+    final_values = [v for v in service_dist.values() if v > 0]
+
+    if not final_values: return send_file(io.BytesIO(), mimetype='image/png')
 
     fig, ax = plt.subplots(figsize=(8, 8))
-    ax.pie(service_dist, labels=service_dist.index, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
-    ax.axis('equal') # 원 모양 유지
+    ax.pie(final_values, labels=final_labels, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+    ax.axis('equal')
     ax.set_title('재직자 근속 연수 분포')
 
     img = io.BytesIO()
