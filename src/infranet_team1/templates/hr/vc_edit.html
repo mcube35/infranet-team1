@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}휴가 신청 수정{% endblock %}
+
+{% block content %}
+<h1>✏️ 휴가 신청 수정</h1>
+<form method="POST">
+    <label>휴가 종류:</label>
+    <select name="vacation_type" required>
+        <option value="연차" {% if vacation.vacation_type == "연차" %}selected{% endif %}>연차</option>
+        <option value="병가" {% if vacation.vacation_type == "병가" %}selected{% endif %}>병가</option>
+        <option value="반차" {% if vacation.vacation_type == "반차" %}selected{% endif %}>반차</option>
+    </select><br><br>
+
+    <label>시작일:</label>
+    <input type="date" name="start_date" value="{{ vacation.start_date }}" required><br><br>
+
+    <label>종료일:</label>
+    <input type="date" name="end_date" value="{{ vacation.end_date }}" required><br><br>
+
+    <label>사유:</label><br>
+    <textarea name="reason" rows="4" cols="50" required>{{ vacation.reason }}</textarea><br><br>
+
+    <button type="submit">💾 저장하기</button>
+
+    <!-- 삭제 버튼 (링크 방식으로 GET 요청, confirm 창 포함) -->
+    <a href="{{ url_for('vacation.delete_vacation', vacation_id=vacation._id) }}"
+    onclick="return confirm('정말 이 휴가 신청을 삭제하시겠습니까?');">
+        <button type="button">🗑 삭제하기</button>
+    </a>
+
+    <!-- 목록으로 돌아가기 -->
+    <a href="{{ url_for('vacation.show_list') }}">
+        <button type="button">📄 목록으로</button>
+    </a>
+</form>
+{% endblock %}
+

@@ -3,30 +3,71 @@
 {% block title %}휴가 신청 목록{% endblock %}
 
 {% block content %}
+
+<!-- 플래시 메시지 표시 영역 (성공, 오류 등) -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+    <div class="alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+    <script>
+      // 간단한 alert으로도 표시 가능
+    {% for category, message in messages %}
+        // alert("{{ message }}");
+    {% endfor %}
+    </script>
+{% endif %}
+{% endwith %}
+
 <h1>📑 휴가 신청 목록</h1>
 
-<p><strong>{{ current_user.name }}</strong>님의 휴가 내역입니다.</p>
+<!-- 남은 연차 표시 -->
+<div style="padding: 10px; border: 1px solid #ddd; margin-bottom: 20px;">
+    <strong>{{ current_user.name }}</strong>님의 연차 현황: 
+    <strong><span style="color: blue;">{{ remaining_days }}</span> / {{ total_leave_days }}</strong> 일 남음
+</div>
+
+<p>
+    <a href="{{ url_for('vacation.apply_form') }}">
+        <button type="button">➕ 휴가 신청하기</button>
+    </a>
+</p>
 
 <table border="1">
 <thead>
     <tr>
+    <th>No.</th>
     <th>종류</th>
     <th>기간</th>
-    <th>사유</th>
     <th>상태</th>
-    </tr>
+    <th>관리</th>
+</tr>
 </thead>
 <tbody>
     {% for vacation in vacations %}
     <tr>
+    <td>{{ loop.revindex }}</td>
     <td>{{ vacation.vacation_type }}</td>
     <td>{{ vacation.start_date }} ~ {{ vacation.end_date }}</td>
-    <td>{{ vacation.reason }}</td>
     <td>{{ vacation.status }}</td>
-    </tr>
+    <td>
+        {% if vacation.status == '대기' %}
+        <a href="{{ url_for('vacation.edit_form', vacation_id=vacation._id) }}">✏️ 수정</a>
+        |
+        <!-- 삭제는 이제 form으로 POST 요청을 보냅니다 -->
+        <form action="{{ url_for('vacation.delete_vacation', vacation_id=vacation._id) }}" method="post" style="display:inline;">
+            <input type="submit" value="🗑 삭제" 
+                onclick="return confirm('정말 삭제하시겠습니까?');"
+                style="background:none; border:none; padding:0; cursor:pointer; color:red; text-decoration:underline;">
+        </form>
+        {% else %}
+        -
+        {% endif %}
+    </td>
+</tr>
     {% else %}
     <tr>
-    <td colspan="4">표시할 휴가 신청이 없습니다.</td>
+        <td colspan="5">표시할 휴가 신청이 없습니다.</td>
     </tr>
     {% endfor %}
 </tbody>

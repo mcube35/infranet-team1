@@ -12,6 +12,9 @@ from routes.auth_route import auth_bp
 
 from routes.hr.att_route import att_bp
 from routes.hr.vc_route import vacation_bp
+from routes.hr.vc_admin_route import vacation_admin_bp
+from routes.hr.emp_admin_route import emp_admin_bp
+from routes.hr.hr_stats_route import hr_stats_bp
 
 from bson.objectid import ObjectId
 from models.user import User
@@ -78,6 +81,9 @@ app.register_blueprint(write_bp, url_prefix="/write")
 app.register_blueprint(task_bp, url_prefix="/task")
 app.register_blueprint(att_bp)
 app.register_blueprint(vacation_bp)
+app.register_blueprint(vacation_admin_bp)
+app.register_blueprint(emp_admin_bp)
+app.register_blueprint(hr_stats_bp)
 app.register_blueprint(issue_bp, url_prefix="/issue")
 app.register_blueprint(client_bp, url_prefix="/client")
 app.register_blueprint(auth_bp, url_prefix="/auth")

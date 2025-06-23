@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}휴가 관리 (관리자){% endblock %}
+
+{% block content %}
+
+<!-- 플래시 메시지를 받아 JavaScript alert으로 띄우는 부분 -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <script>
+      {% for message in messages %}
+        alert("{{ message }}");
+      {% endfor %}
+    </script>
+  {% endif %}
+{% endwith %}
+
+<h1>🛠 휴가 승인 대기 목록 (관리자용)</h1>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>신청자</th>
+            <th>휴가 종류</th>
+            <th>기간</th>
+            <th>사유</th>
+            <th>신청일</th>
+            <th>상태</th>
+            <th>관리</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if vacations %}
+            {% for vacation in vacations %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                    {% if vacation.user_info and vacation.user_info|length > 0 %}
+                        {{ vacation.user_info[0].name }}
+                    {% else %}
+                        (알 수 없는 사용자)
+                    {% endif %}
+                </td>
+                <td>{{ vacation.vacation_type }}</td>
+                <td>{{ vacation.start_date }} ~ {{ vacation.end_date }}</td>
+                <td>{{ vacation.reason }}</td>
+                <td>{{ vacation.created_at.strftime('%Y-%m-%d %H:%M') if vacation.created_at else '-' }}</td>
+                <td>{{ vacation.status }}</td>
+                <td>
+                    <form action="{{ url_for('vacation_admin.approve_vacation', vacation_id=vacation._id) }}" method="post" style="display: inline;">
+                        <input type="submit" value="✅ 승인" 
+                            onclick="return confirm('이 휴가 신청을 승인하시겠습니까?');"
+                            style="background: none; border: none; padding: 0; cursor: pointer;">
+                    </form>
+                    |
+                    <form action="{{ url_for('vacation_admin.reject_vacation', vacation_id=vacation._id) }}" method="post" style="display: inline;">
+                        <input type="submit" value="❌ 거절" 
+                            onclick="return confirm('이 휴가 신청을 거절하시겠습니까?');"
+                            style="background: none; border: none; padding: 0; cursor: pointer;">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="8">승인 대기 중인 휴가 신청이 없습니다.</td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+{% endblock %}
