@@ -32,8 +32,6 @@ def get_posts_collection():
 def get_hr_collection():
     return mongo_db["hr"]
 
-from flask import request
-
 # 기본 전체 게시글 페이지
 @write_bp.route("/")
 def home():
