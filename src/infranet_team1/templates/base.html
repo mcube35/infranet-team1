@@ -142,9 +142,9 @@
           <li><a href="{{ url_for('vacation.show_list') }}">내 휴가 신청 / 조회</a></li>
 
           {% if current_user.role in ['admin', 'system'] %}
-            <li><a href="#">🔒 직원 정보 조회 및 관리</a></li>
-            <li><a href="#">🔒 휴가 신청 승인 / 거절</a></li>
-            <li><a href="#">🔒 인사 통계 보기</a></li>
+            <li><a href="{{ url_for('emp_admin.employee_list') }}">🔒 직원 정보 조회 및 관리</a></li>
+            <li><a href="{{ url_for('vacation_admin.admin_list') }}">🔒 휴가 신청 승인 / 거절</a></li>
+            <li><a href="{{ url_for('hr_stats.dashboard') }}">🔒 인사 통계 보기</a></li>
           {% endif %}
 
           {% if current_user.role == 'system' %}

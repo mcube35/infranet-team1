@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}직원 목록 (관리자){% endblock %}
+
+{% block content %}
+<h1>👥 직원 목록 (관리자용)</h1>
+
+<p>
+    <a href="{{ url_for('emp_admin.employee_create_form') }}">➕ 신규 직원 등록</a>
+</p>
+
+<table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th>No.</th>
+            <th>이름</th>
+            <th>부서</th>
+            <th>직위</th>
+            <th>이메일</th>
+            <th>입사일</th>
+            <th>상태</th>
+            <th>관리</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if employees %}
+            {% for employee in employees %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ employee.name }}</td>
+                <td>{{ employee.department }}</td>
+                <td>{{ employee.position }}</td>
+                <td>{{ employee.email }}</td>
+                <td>{{ employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '-' }}</td>
+                <td>{{ employee.status }}</td>
+                <td>
+                    <a href="{{ url_for('emp_admin.employee_edit_form', employee_id=employee._id) }}">상세/수정</a>
+                    
+                    {% if employee.status in ['재직중', '휴직'] %}
+                    |
+                    <form action="{{ url_for('emp_admin.employee_deactivate', employee_id=employee._id) }}" method="post" style="display: inline;">
+                        <input type="submit" value="비활성화" 
+                            onclick="return confirm('정말 이 직원을 비활성화(퇴사 처리)하시겠습니까?');"
+                            style="background: none; border: none; padding: 0; cursor: pointer; color: red; text-decoration: underline;">
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 20px;">
+                    {% if search_keyword or search_status or start_date or end_date %}
+                        검색 결과가 없습니다.
+                    {% else %}
+                        등록된 직원이 없습니다.
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<!-- 하단 검색 폼 -->
+<div style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; background-color:#f9f9f9; text-align: center;">
+    <form method="GET" action="{{ url_for('emp_admin.employee_list') }}" style="display: inline-block;">
+        <select name="search_category">
+            <option value="name" {% if search_category == 'name' %}selected{% endif %}>이름</option>
+            <option value="department" {% if search_category == 'department' %}selected{% endif %}>부서</option>
+            <option value="position" {% if search_category == 'position' %}selected{% endif %}>직위</option>
+        </select>
+        <input type="text" name="search_keyword" placeholder="검색어" value="{{ search_keyword or '' }}" size="15">
+
+        <label for="status">상태:</label>
+        <select name="status" id="status">
+            <option value="">전체</option>
+            <option value="재직중" {% if search_status == '재직중' %}selected{% endif %}>재직중</option>
+            <option value="퇴사" {% if search_status == '퇴사' %}selected{% endif %}>퇴사</option>
+            <option value="휴직" {% if search_status == '휴직' %}selected{% endif %}>휴직</option>
+        </select>
+
+        <label for="start_date">입사일:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
+        ~
+        <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
+
+        <button type="submit">🔍 검색</button>
+        <a href="{{ url_for('emp_admin.employee_list') }}"><button type="button">🔄 초기화</button></a>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if employee %}직원 정보 수정{% else %}직원 등록{% endif %}
+{% endblock %}
+
+{% block content %}
+<h1>
+    {% if employee %}직원 정보 수정{% else %}직원 등록{% endif %}
+</h1>
+
+<!-- ✅ 1. enctype="multipart/form-data" 속성 추가 (파일 업로드에 필수) -->
+<form method="POST" enctype="multipart/form-data">
+    
+    <!-- ✅ 2. 프로필 사진 표시 및 업로드 영역 추가 -->
+    <div style="margin-bottom: 20px;">
+        <label>프로필 사진:</label><br>
+        {% if employee and employee.profile_image_id %}
+            <!-- 기존 이미지가 있을 경우 표시. app.py의 file_download 라우트를 사용합니다. -->
+            <img src="{{ url_for('file_download', file_id=employee.profile_image_id) }}" alt="프로필 사진" width="150" style="margin-bottom: 10px; display: block;">
+            <label for="profile_image">사진 변경:</label>
+        {% else %}
+            <p>(등록된 사진 없음)</p>
+            <label for="profile_image">사진 등록:</label>
+        {% endif %}
+        <input type="file" id="profile_image" name="profile_image" accept="image/*">
+    </div>
+
+<form method="POST">
+    <label for="name">이름:</label><br>
+    <input type="text" id="name" name="name" required value="{{ employee.name if employee else '' }}"><br><br>
+
+    <label for="email">이메일:</label><br>
+    <input type="email" id="email" name="email" required value="{{ employee.email if employee else '' }}"><br><br>
+
+    <label for="password">비밀번호: 
+        {% if employee %}
+        (변경 시에만 입력)
+        {% endif %}
+    </label><br>
+    <input type="password" id="password" name="password" {% if not employee %}required{% endif %}><br><br>
+
+    <label for="position">직위:</label><br>
+    <input type="text" id="position" name="position" value="{{ employee.position if employee else '' }}"><br><br>
+
+    <label for="department">부서:</label><br>
+    <input type="text" id="department" name="department" value="{{ employee.department if employee else '' }}"><br><br>
+
+    <label for="phone">전화번호:</label><br>
+    <input type="text" id="phone" name="phone" value="{{ employee.phone if employee else '' }}"><br><br>
+
+    <label for="hire_date">입사일:</label><br>
+    <input type="date" id="hire_date" name="hire_date" value="{{ employee.hire_date.strftime('%Y-%m-%d') if employee and employee.hire_date else '' }}"><br><br>
+
+    <label for="status">상태:</label><br>
+    <select id="status" name="status">
+        <option value="재직중" {% if employee and employee.status == '재직중' %}selected{% endif %}>재직중</option>
+        <option value="퇴사" {% if employee and employee.status == '퇴사' %}selected{% endif %}>퇴사</option>
+        <option value="휴직" {% if employee and employee.status == '휴직' %}selected{% endif %}>휴직</option>
+    </select><br><br>
+
+    <label for="role">권한:</label><br>
+    <select id="role" name="role">
+        <option value="user" {% if employee and employee.role == 'user' %}selected{% endif %}>일반 사용자</option>
+        <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>관리자</option>
+        <option value="system" {% if employee and employee.role == 'system' %}selected{% endif %}>시스템</option>
+    </select><br><br>
+
+    <button type="submit">{% if employee %}수정하기{% else %}등록하기{% endif %}</button>
+    <a href="{{ url_for('emp_admin.employee_list') }}">목록으로</a>
+</form>
+{% endblock %}

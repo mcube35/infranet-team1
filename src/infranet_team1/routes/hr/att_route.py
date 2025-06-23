@@ -1,10 +1,11 @@
 from bson.objectid import ObjectId
 from flask import Blueprint, render_template, request, redirect, url_for
-from datetime import datetime
+from datetime import datetime, timedelta 
 from flask_login import current_user
 from db import mongo_db
 
 att_bp = Blueprint('att', __name__, url_prefix="/hr/att")
+today = datetime.today()
 
 def get_att_collection():
     return mongo_db["attendance"]
@@ -16,9 +17,17 @@ def show_list():
     today_date_str = datetime.now().strftime('%Y-%m-%d')
     today_record = get_att_collection().find_one({"user_id": ObjectId(current_user.id), "date": today_date_str})
 
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
+    # 1. 이번 달 기본 날짜 계산
+    first_day_of_month = today.replace(day=1).strftime('%Y-%m-%d')
+    next_month = today.replace(day=28) + timedelta(days=4)  # 다음 달로 넘어감
+    last_day = (next_month - timedelta(days=next_month.day)).day
+    last_day_of_month = today.replace(day=last_day).strftime('%Y-%m-%d')
 
+    # 2. 사용자가 선택한 필터값이 없으면 기본값으로 설정
+    start_date_str = request.args.get('start_date') or first_day_of_month
+    end_date_str = request.args.get('end_date') or last_day_of_month
+
+    # 3. 쿼리 구성
     query = {"user_id": ObjectId(current_user.id)}
     if start_date_str and end_date_str:
         query["date"] = {"$gte": start_date_str, "$lte": end_date_str}
