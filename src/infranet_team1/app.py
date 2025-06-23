@@ -1,5 +1,6 @@
 from datetime import timedelta
 import io
+import platform
 from flask import Flask, jsonify, render_template, request, redirect, url_for, send_file
 from flask_login import LoginManager, current_user
 from db import mongo_db
@@ -23,7 +24,14 @@ from extension import get_fs
 
 import matplotlib
 matplotlib.use('Agg')
-matplotlib.rcParams["font.family"] = "Malgun Gothic"
+os_system = platform.system()
+if os_system == "Windows":
+    matplotlib.rcParams['font.family'] = 'Malgun Gothic'
+elif os_system == "Darwin":  # macOS
+    matplotlib.rcParams['font.family'] = 'AppleGothic'
+else:  # Linux (Ubuntu 등)
+    matplotlib.rcParams['font.family'] = 'NanumGothic'
+matplotlib.rcParams["axes.unicode_minus"] = False  # 마이너스 부호 깨짐 방지
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"

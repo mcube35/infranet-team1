@@ -2,20 +2,6 @@ import io
 from flask import Blueprint, render_template, send_file
 from db import mongo_db
 
-# matplotlib 설정
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-
-# 한글 폰트 설정
-
-try:
-    font_path = "c:/Windows/Fonts/malgun.ttf" # Windows 예시
-    font_prop = fm.FontProperties(fname=font_path)
-    plt.rc('font', family=font_prop.get_name())
-except:
-    # 폰트가 없을 경우 기본 폰트 사용
-    print("한글 폰트를 찾을 수 없습니다. 차트의 한글이 깨질 수 있습니다.")
-
 hr_stats_bp = Blueprint("hr_stats", __name__, url_prefix="/hr/stats")
 
 # 메인 통계 대시보드 페이지
