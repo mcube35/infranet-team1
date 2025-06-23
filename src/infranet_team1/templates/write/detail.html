@@ -33,8 +33,11 @@
             <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
             <pre class="small_ui">{{ comment.content }}</pre>
 
-            {% if comment.author_id|string == current_user.id %}
-            <!-- 댓글 삭제 버튼 (본인만 보임) -->
+            {% set is_comment_author = (comment.author_id|string == current_user.id) %}
+            {% set is_post_author = (post.author_id|string == current_user.id) %}
+            {% set is_admin = current_user.role in ['admin', 'system'] %}
+
+            {% if is_comment_author or is_post_author or is_admin %}
             <form method="POST" action="{{ url_for('write.delete_comment', post_id=post._id) }}" style="display:inline;">
                 <input type="hidden" name="comment_id" value="{{ comment.comment_id }}">
                 <button type="submit" class="small_ui" onclick="return confirm('댓글을 삭제하시겠습니까?')">댓글 삭제</button>
