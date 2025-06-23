@@ -1,5 +1,6 @@
 from datetime import timedelta
 import io
+import platform
 from flask import Flask, jsonify, render_template, request, redirect, url_for, send_file
 from flask_login import LoginManager, current_user
 from db import mongo_db
@@ -18,20 +19,22 @@ from routes.hr.hr_stats_route import hr_stats_bp
 
 from bson.objectid import ObjectId
 from models.user import User
-from path_helper import PROJECT_DIR
+from extension import get_fs
 
 
 import matplotlib
 matplotlib.use('Agg')
-matplotlib.rcParams["font.family"] = "Malgun Gothic"
-
-def get_fs():
-    from gridfs import GridFS
-    return GridFS(mongo_db)
+os_system = platform.system()
+if os_system == "Windows":
+    matplotlib.rcParams['font.family'] = 'Malgun Gothic'
+elif os_system == "Darwin":  # macOS
+    matplotlib.rcParams['font.family'] = 'AppleGothic'
+else:  # Linux (Ubuntu 등)
+    matplotlib.rcParams['font.family'] = 'NanumGothic'
+matplotlib.rcParams["axes.unicode_minus"] = False  # 마이너스 부호 깨짐 방지
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"
-app.config["UPLOAD_FOLDER"] = PROJECT_DIR / "static" / "uploads"
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SECURE=True,
@@ -70,7 +73,7 @@ def file_download(file_id):
         file_obj = fs.get(ObjectId(file_id))
         return send_file(
             io.BytesIO(file_obj.read()),
-            mimetype=file_obj.content_type or "application/octet-stream",
+            mimetype=file_obj.content_type or "application/ocpython app.pytet-stream",
             download_name=file_obj.filename or "download",
             as_attachment=True
         )

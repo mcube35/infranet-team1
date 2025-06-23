@@ -3,18 +3,65 @@
 {% block title %}게시글 목록 - 커뮤니티{% endblock %}
 
 {% block content %}
-<h2>게시글 목록</h2>
+<div class="container" style="display: flex;">
+    <!-- 왼쪽 사이드바: 카테고리 -->
+    <aside class="sidebar">
+        <h3>카테고리</h3>
+        <ul class="category-list">
+            <li><a href="{{ url_for('write.home') }}">전체보기</a></li>
+            <li><a href="{{ url_for('write.free_board') }}">자유게시판</a></li>
+            <li><a href="{{ url_for('write.qna_board') }}">질문과 답변</a></li>
+            <li><a href="{{ url_for('write.notice_board') }}">공지사항</a></li>
+        </ul>
+    </aside>
 
-{% if posts %}
-<ul class="post-list">
-    {% for post in posts %}
-    <li>
-        <a href="{{ url_for('write.detail', post_id=post._id) }}">{{ post.title }}</a>
-        <small>by {{ author_map[post.author_id] }} | {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p>게시글이 없습니다.</p>
-{% endif %}
+    <!-- 오른쪽 메인 콘텐츠 -->
+    <main class="content" style="flex: 1; padding: 10px;">
+        <h2>게시글 목록</h2>
+
+        <form method="GET" action="{{ url_for('write.home') }}">
+            <input type="text" name="q" placeholder="검색어를 입력하세요" value="{{ request.args.get('q', '') }}">
+            <button type="submit">검색</button>
+            <!-- 카테고리 유지하려면 히든 필드 추가 -->
+            {% if request.args.get('category') %}
+            <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+            {% endif %}
+        </form>
+
+        {% if posts %}
+        <ul class="post-list">
+            {% for post in posts %}
+            <li>
+                <a href="{{ url_for('write.detail', post_id=post._id) }}">{{ post.title }}</a>
+                <small>by {{ author_map[post.author_id] }} | {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- 게시글 목록 하단에 새글 작성 버튼 추가 -->
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('write.write_form') }}" class="btn btn-primary">새글 작성하기</a>
+        </div>
+
+        {% else %}
+        <p>게시글이 없습니다.</p>
+        {% endif %}
+    </main>
+    <!-- 통계 패널 -->
+    <section class="statistics" style="flex: 1; padding: 10px; background-color: #f9f9f9; border-left: 1px solid #ccc;">
+        <h3>📊 활동 순위</h3>
+        <ul>
+            {% for user_name, count in top_users %}
+            <li>{{ user_name }} - {{ count }}회</li>
+            {% endfor %}
+        </ul>
+        <h3>☁️ 워드 클라우드</h3>
+        {% if wordcloud_url %}
+            <img src="{{ wordcloud_url }}" alt="워드 클라우드" style="width: 100%; max-width: 200px;">
+        {% else %}
+            <p>데이터 없음</p>
+        {% endif %}
+    </section>
+    </div>
+</div>
 {% endblock %}

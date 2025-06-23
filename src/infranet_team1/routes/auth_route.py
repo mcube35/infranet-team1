@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user
 import bcrypt
@@ -9,16 +9,14 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @auth_bp.route("/register", methods=["GET"])
 def register_form():
-    if current_user.role != "admin":
-        flash("접근 권한이 없습니다.", "danger")
+    if not current_user.role in ["admin", "system"]:
         return redirect(url_for("home"))
     return render_template("auth/register.html")
 
 
 @auth_bp.route("/register", methods=["POST"])
 def register_post():
-    if current_user.role != "admin":
-        flash("접근 권한이 없습니다.", "danger")
+    if not current_user.role in ["admin", "system"]:
         return redirect(url_for("home"))
 
     name = request.form.get("name")
@@ -47,11 +45,11 @@ def register_post():
         "position": position,
         "department": department,
         "phone": phone,
-        "hire_date": datetime.utcnow(),
+        "hire_date": datetime.now(timezone.utc),
         "status": "재직중",
         "role": "user",
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
     }
 
     mongo_db.hr.insert_one(new_user)

@@ -56,7 +56,6 @@
                 <a href="#">고객사 관리</a>
                  <div class="dropdown-menu">
                     <a href="{{ url_for('client.show_list') }}">고객사 조회 및 관리</a>
-                    <a href="#">업무 통계</a>
                 </div>
             </div>
 
@@ -70,9 +69,6 @@
                         <a href="{{ url_for('emp_admin.employee_list') }}">🔒 직원 정보 관리</a>
                         <a href="{{ url_for('vacation_admin.admin_list') }}">🔒 휴가 신청 관리</a>
                         <a href="{{ url_for('hr_stats.dashboard') }}">🔒 인사 통계 보기</a>
-                    {% endif %}
-                    {% if current_user.role == 'system' %}
-                        <a href="#">👑 직원 권한 관리</a>
                     {% endif %}
                 </div>
             </div>
