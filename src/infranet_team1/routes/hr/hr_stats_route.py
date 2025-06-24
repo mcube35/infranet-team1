@@ -5,12 +5,6 @@ from datetime import date, datetime
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import platform
-
-if platform.system() == 'Windows':
-    plt.rc('font', family='Malgun Gothic')
-else:
-    plt.rc('font', family='AppleGothic')
 
 hr_stats_bp = Blueprint("hr_stats", __name__, url_prefix="/hr/stats")
 
@@ -24,61 +18,107 @@ def dashboard():
                         total_employees=total_employees, active_employees=active_employees,
                         on_leave_employees=on_leave_employees, resigned_employees=resigned_employees)
 
+def get_mongo_counts(group_field, *, match=None, date_format=None, limit=None, count_key='count'):
+    pipeline = []
+    if match:
+        pipeline.append({'$match': match})
+    group_by = f"${group_field}"
+    if date_format:
+        date_field = f"{group_field}_str"
+        pipeline.append({'$project': {date_field: {'$dateToString': {'format': date_format, 'date': group_by}}}})
+        group_by = f"${date_field}"
+    pipeline += [
+        {'$group': {'_id': group_by, count_key: {'$sum': 1}}},
+        {'$sort': {'_id' if date_format else count_key: -1}}
+    ]
+    if limit:
+        pipeline.append({'$limit': limit})
+    data = list(mongo_db.hr.aggregate(pipeline))
+    if date_format:
+        data.sort(key=lambda d: d['_id'])  # 오름차순 정렬
+    return data
+
+def plot_chart(labels, values, *, chart_type='bar', title='', color='skyblue', ylabel='직원 수'):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    if chart_type == 'bar':
+        ax.bar(labels, values, color=color)
+    elif chart_type == 'line':
+        ax.plot(labels, values, marker='o', linestyle='-', color=color)
+        plt.grid(True, linestyle='--', linewidth=0.5)
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    plt.xticks(rotation=45, ha='right')
+    if values:
+        ax.set_yticks(range(0, max(values) + 2))
+    img = io.BytesIO()
+    fig.savefig(img, format='png', bbox_inches='tight')
+    img.seek(0)
+    plt.close(fig)
+    return send_file(img, mimetype='image/png')
+
+def generate_chart(group_field, *, match=None, date_format=None, limit=None,
+                   chart_type='bar', title='', color='skyblue', default_label='미지정', count_key='count'):
+    data = get_mongo_counts(group_field, match=match, date_format=date_format, limit=limit, count_key=count_key)
+    if not data:
+        return send_file(io.BytesIO(), mimetype='image/png')
+    labels = [d['_id'] if d['_id'] else default_label for d in data]
+    values = [d[count_key] for d in data]
+    return plot_chart(labels, values, chart_type=chart_type, title=title, color=color)
+
+
+# --- 라우트 정의 ---
+
 @hr_stats_bp.route("/charts/employees_by_department.png")
 def chart_employees_by_department():
-    pipeline = [{"$match": {"status": "재직중"}}, {"$group": {"_id": "$department", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
-    data = list(mongo_db.hr.aggregate(pipeline))
-    if not data: return send_file(io.BytesIO(), mimetype='image/png')
-    labels = [d['_id'] if d['_id'] else '미지정' for d in data]; values = [d['count'] for d in data]
-    fig, ax = plt.subplots(figsize=(10, 6)); ax.bar(labels, values, color='skyblue'); ax.set_ylabel('직원 수'); ax.set_title('부서별 직원 수 (재직중)'); plt.xticks(rotation=45, ha="right")
-    if values: max_y = max(values); ax.set_yticks(range(0, max_y + 2))
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
-    return send_file(img, mimetype='image/png')
+    return generate_chart(
+        group_field="department",
+        match={"status": "재직중"},
+        title="부서별 직원 수 (재직중)",
+        color="skyblue"
+    )
 
 @hr_stats_bp.route("/charts/employees_by_position.png")
 def chart_employees_by_position():
-    pipeline = [{"$match": {"status": "재직중"}}, {"$group": {"_id": "$position", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
-    data = list(mongo_db.hr.aggregate(pipeline))
-    if not data: return send_file(io.BytesIO(), mimetype='image/png')
-    labels = [d['_id'] if d['_id'] else '미지정' for d in data]; values = [d['count'] for d in data]
-    fig, ax = plt.subplots(figsize=(10, 6)); ax.bar(labels, values, color='lightgreen'); ax.set_ylabel('직원 수'); ax.set_title('직급별 직원 수 (재직중)'); plt.xticks(rotation=45, ha="right")
-    if values: max_y = max(values); ax.set_yticks(range(0, max_y + 2))
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
-    return send_file(img, mimetype='image/png')
+    return generate_chart(
+        group_field="position",
+        match={"status": "재직중"},
+        title="직급별 직원 수 (재직중)",
+        color="lightgreen"
+    )
 
 @hr_stats_bp.route("/charts/employees_by_job_title.png")
 def chart_employees_by_job_title():
-    pipeline = [{"$match": {"status": "재직중"}}, {"$group": {"_id": "$job_title", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
-    data = list(mongo_db.hr.aggregate(pipeline))
-    if not data: return send_file(io.BytesIO(), mimetype='image/png')
-    labels = [d['_id'] if d['_id'] else '미지정' for d in data]
-    values = [d['count'] for d in data]
-    fig, ax = plt.subplots(figsize=(10, 6)); ax.bar(labels, values, color='gold'); ax.set_ylabel('직원 수'); ax.set_title('직책/직무별 직원 수 (재직중)'); plt.xticks(rotation=45, ha="right")
-    if values: max_y = max(values); ax.set_yticks(range(0, max_y + 2))
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
-    return send_file(img, mimetype='image/png')
+    return generate_chart(
+        group_field="job_title",
+        match={"status": "재직중"},
+        title="직책/직무별 직원 수 (재직중)",
+        color="gold"
+    )
 
 @hr_stats_bp.route("/charts/monthly_hires.png")
 def chart_monthly_hires():
-    pipeline = [{"$project": {"hire_month": {"$dateToString": {"format": "%Y-%m", "date": "$hire_date"}}}}, {"$group": {"_id": "$hire_month", "hires": {"$sum": 1}}}, {"$sort": {"_id": -1}}, {"$limit": 12}]
-    data = sorted(list(mongo_db.hr.aggregate(pipeline)), key=lambda x: x['_id'])
-    if not data: return send_file(io.BytesIO(), mimetype='image/png')
-    labels = [d['_id'] for d in data]; values = [d['hires'] for d in data]
-    fig, ax = plt.subplots(figsize=(12, 6)); ax.plot(labels, values, marker='o', linestyle='-', color='#1f77b4'); ax.set_title('월별 입사자 수 (최근 12개월)'); ax.set_ylabel('인원 수'); plt.xticks(rotation=45); plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    if values: max_y = max(values); ax.set_yticks(range(0, max_y + 2))
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
-    return send_file(img, mimetype='image/png')
+    return generate_chart(
+        group_field="hire_date",
+        date_format="%Y-%m",
+        limit=12,
+        chart_type="line",
+        title="월별 입사자 수 (최근 12개월)",
+        color="#1f77b4",
+        count_key="count"
+    )
 
 @hr_stats_bp.route("/charts/monthly_resignations.png")
 def chart_monthly_resignations():
-    pipeline = [{"$match": {"status": "퇴사"}}, {"$project": {"resignation_month": {"$dateToString": {"format": "%Y-%m", "date": "$updated_at"}}}}, {"$group": {"_id": "$resignation_month", "resignations": {"$sum": 1}}}, {"$sort": {"_id": -1}}, {"$limit": 12}]
-    data = sorted(list(mongo_db.hr.aggregate(pipeline)), key=lambda x: x['_id'])
-    if not data: return send_file(io.BytesIO(), mimetype='image/png')
-    labels = [d['_id'] for d in data]; values = [d['resignations'] for d in data]
-    fig, ax = plt.subplots(figsize=(12, 6)); ax.plot(labels, values, marker='o', linestyle='-', color='#d62728'); ax.set_title('월별 퇴사자 수 (최근 12개월)'); ax.set_ylabel('인원 수'); plt.xticks(rotation=45); plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    if values: max_y = max(values); ax.set_yticks(range(0, max_y + 2))
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
-    return send_file(img, mimetype='image/png')
+    return generate_chart(
+        group_field="updated_at",
+        match={"status": "퇴사"},
+        date_format="%Y-%m",
+        limit=12,
+        chart_type="line",
+        title="월별 퇴사자 수 (최근 12개월)",
+        color="#d62728",
+        count_key="count"
+    )
 
 @hr_stats_bp.route("/charts/years_of_service.png")
 def chart_years_of_service():

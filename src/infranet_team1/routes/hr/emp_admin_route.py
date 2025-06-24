@@ -6,7 +6,7 @@ from datetime import datetime
 import bcrypt
 import math
 
-from gridfs import GridFS
+from extension import get_fs
 from werkzeug.utils import secure_filename
 
 emp_admin_bp = Blueprint("emp_admin", __name__, url_prefix="/hr/emp")
@@ -16,9 +16,14 @@ def get_hr_collection():
 
 @emp_admin_bp.route("/list", methods=["GET"])
 def employee_list():
-    PAGE_SIZE = 15; page = request.args.get('page', 1, type=int); skip_count = (page - 1) * PAGE_SIZE
-    search_category = request.args.get('search_category', 'name'); search_keyword = request.args.get('search_keyword', '')
-    search_status = request.args.get('status', ''); start_date = request.args.get('start_date', ''); end_date = request.args.get('end_date', '')
+    page_size = 15
+    page = request.args.get('page', 1, type=int)
+    skip_count = (page - 1) * page_size
+    search_category = request.args.get('search_category', 'name')
+    search_keyword = request.args.get('search_keyword', '')
+    search_status = request.args.get('status', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
     query = {}
     if search_keyword: query[search_category] = {"$regex": search_keyword, "$options": "i"}
     if search_status: query["status"] = search_status
@@ -27,11 +32,11 @@ def employee_list():
     if end_date: date_query["$lte"] = datetime.strptime(end_date, "%Y-%m-%d")
     if date_query: query["hire_date"] = date_query
     total_records = get_hr_collection().count_documents(query)
-    total_pages = math.ceil(total_records / PAGE_SIZE)
-    employees = list(get_hr_collection().find(query).sort("hire_date", -1).skip(skip_count).limit(PAGE_SIZE))
+    total_pages = math.ceil(total_records / page_size)
+    employees = list(get_hr_collection().find(query).sort("hire_date", -1).skip(skip_count).limit(page_size))
     return render_template("hr/emp_admin_list.html", employees=employees, search_category=search_category, search_keyword=search_keyword,
                         search_status=search_status, start_date=start_date, end_date=end_date, total_pages=total_pages,
-                        current_page=page, total_records=total_records, page_size=PAGE_SIZE)
+                        current_page=page, total_records=total_records, page_size=page_size)
 
 # 직원 수정 폼 (GET) - 부서/직위 목록 전달
 @emp_admin_bp.route("/detail/<employee_id>", methods=["GET"])
@@ -67,7 +72,7 @@ def employee_edit_submit(employee_id):
         "status": request.form["status"], "role": request.form["role"],
         "annual_leave_days": int(request.form.get("annual_leave_days", 15)), "updated_at": datetime.now()
     }
-    fs = GridFS(mongo_db)
+    fs = get_fs()
     if 'profile_image' in request.files:
         file = request.files['profile_image']
         if file and file.filename != '':
@@ -117,7 +122,8 @@ def employee_create():
     if 'profile_image' in request.files:
         file = request.files['profile_image']
         if file and file.filename != '':
-            fs = GridFS(mongo_db); filename = secure_filename(file.filename)
+            fs = get_fs()
+            filename = secure_filename(file.filename)
             file_id = fs.put(file, filename=filename, content_type=file.content_type)
             employee_data['profile_image_id'] = file_id
     get_hr_collection().insert_one(employee_data)

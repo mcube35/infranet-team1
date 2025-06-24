@@ -13,15 +13,15 @@ def get_vacation_collection():
 # 휴가 신청목록 화면 (연차 계산 로직 수정)
 @vacation_bp.route("/list", methods=["GET"])
 def show_list():
-    PAGE_SIZE = 10
+    page_size = 10
     try: page = int(request.args.get('page', 1))
     except (TypeError, ValueError): page = 1
-    skip_count = (page - 1) * PAGE_SIZE
+    skip_count = (page - 1) * page_size
 
     query = {"user_id": ObjectId(current_user.id)}
     total_vacations = get_vacation_collection().count_documents(query)
-    total_pages = math.ceil(total_vacations / PAGE_SIZE)
-    vacations = list(get_vacation_collection().find(query).sort("created_at", -1).skip(skip_count).limit(PAGE_SIZE))
+    total_pages = math.ceil(total_vacations / page_size)
+    vacations = list(get_vacation_collection().find(query).sort("created_at", -1).skip(skip_count).limit(page_size))
 
     # --- 남은 연차 계산 로직 (전체 수정) ---
     
@@ -87,7 +87,7 @@ def show_list():
                         total_pages=total_pages,
                         current_page=page,
                         total_vacations=total_vacations,
-                        page_size=PAGE_SIZE)
+                        page_size=page_size)
 
 @vacation_bp.route("/apply", methods=["GET"])
 def apply_form():

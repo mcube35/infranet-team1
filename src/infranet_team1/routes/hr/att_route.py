@@ -6,7 +6,6 @@ from db import mongo_db
 import math
 
 att_bp = Blueprint('att', __name__, url_prefix="/hr/att")
-today = datetime.today()
 
 def get_att_collection():
     return mongo_db["attendance"]
@@ -14,19 +13,19 @@ def get_att_collection():
 # 근태목록 보기
 @att_bp.route("/", methods=["GET"])
 def show_list():
-    PAGE_SIZE = 15
+    page_size = 15
     try:
-        page = int(request.args.get('page', 1))
+        page = request.args.get('page', 1, type=int)
     except (TypeError, ValueError):
         page = 1
-    skip_count = (page - 1) * PAGE_SIZE
+    skip_count = (page - 1) * page_size
 
     today_date_str = datetime.now().strftime('%Y-%m-%d')
     today_record = get_att_collection().find_one({"user_id": ObjectId(current_user.id), "date": today_date_str})
 
-    first_day_of_month = today.replace(day=1).strftime('%Y-%m-%d')
+    first_day_of_month = datetime.today().replace(day=1).strftime('%Y-%m-%d')
     start_date_str = request.args.get('start_date') or first_day_of_month
-    end_date_str = request.args.get('end_date') or today.strftime('%Y-%m-%d')
+    end_date_str = request.args.get('end_date') or datetime.today().strftime('%Y-%m-%d')
 
     query = {
         "user_id": ObjectId(current_user.id),
@@ -34,8 +33,8 @@ def show_list():
     }
 
     total_records = get_att_collection().count_documents(query)
-    total_pages = math.ceil(total_records / PAGE_SIZE)
-    all_att_records = list(get_att_collection().find(query).sort("date", -1).skip(skip_count).limit(PAGE_SIZE))
+    total_pages = math.ceil(total_records / page_size)
+    all_att_records = list(get_att_collection().find(query).sort("date", -1).skip(skip_count).limit(page_size))
 
     processed_records = []
     for record in all_att_records:
@@ -67,7 +66,7 @@ def show_list():
         total_pages=total_pages,
         current_page=page,
         total_records=total_records,
-        page_size=PAGE_SIZE
+        page_size=page_size
     )
 
 def calc_working_min(clock_in_dt, clock_out_dt):

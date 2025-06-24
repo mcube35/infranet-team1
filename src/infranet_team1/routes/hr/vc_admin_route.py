@@ -16,12 +16,12 @@ def admin_list():
     if current_user.role not in ['admin', 'system']:
         abort(403)
 
-    PAGE_SIZE = 15
+    page_size = 15
     try:
-        page = int(request.args.get('page', 1))
+        page = request.args.get('page', 1, type=int)
     except (TypeError, ValueError):
         page = 1
-    skip_count = (page - 1) * PAGE_SIZE
+    skip_count = (page - 1) * page_size
 
     # 1. 상태 필터링 기능 추가
     status_filter = request.args.get('status', '대기') # 기본값은 '대기'
@@ -30,14 +30,14 @@ def admin_list():
         query['status'] = status_filter
     
     total_records = get_vacation_collection().count_documents(query)
-    total_pages = math.ceil(total_records / PAGE_SIZE)
+    total_pages = math.ceil(total_records / page_size)
 
     pipeline = [
         {"$match": query},
         {"$lookup": {"from": "hr", "localField": "user_id", "foreignField": "_id", "as": "user_info"}},
         {"$sort": {"created_at": -1}},
         {"$skip": skip_count},
-        {"$limit": PAGE_SIZE}
+        {"$limit": page_size}
     ]
     vacations = list(get_vacation_collection().aggregate(pipeline))
     
@@ -47,7 +47,7 @@ def admin_list():
         total_pages=total_pages,
         current_page=page,
         status_filter=status_filter,
-        page_size=PAGE_SIZE, # No. 계산을 위해 추가
+        page_size=page_size, # No. 계산을 위해 추가
         total_records=total_records # No. 계산을 위해 추가
     )
 
