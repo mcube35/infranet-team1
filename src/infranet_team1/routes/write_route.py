@@ -32,21 +32,16 @@ def get_posts_collection():
 def get_hr_collection():
     return mongo_db["hr"]
 
-# 기본 전체 게시글 페이지
 @write_bp.route("/")
 def home():
-    # 1. 검색어와 카테고리 파라미터 받기
+    # 1. 검색어와 카테고리 필터 받기
     q = request.args.get("q", "").strip()
     category = request.args.get("category", "").strip()
 
-    # 2. 쿼리 조건 만들기
+    # 2. 쿼리 조건 구성
     query = {}
-
-    # 만약 category가 있으면 tags 배열에 포함된 게시글 필터링 (tags 필드 사용 가정)
     if category:
-        query["tags"] = category
-
-    # 검색어가 있으면 제목이나 내용에 포함된 게시글 필터링
+        query["category"] = category  # 'tags'가 아닌 'category'로 수정
     if q:
         query["$or"] = [
             {"title": {"$regex": q, "$options": "i"}},
@@ -56,12 +51,12 @@ def home():
     # 3. 게시글 조회
     posts = list(get_posts_collection().find(query).sort("created_at", -1))
 
-    # 4. 작성자 이름 매핑
+    # 4. 작성자 매핑
     author_ids = list(set(post["author_id"] for post in posts))
     authors = list(get_hr_collection().find({"_id": {"$in": author_ids}}))
     author_map = {author["_id"]: author["name"] for author in authors}
 
-    # 5. 활동 순위 계산 - 작성자별 게시글 수 상위 5명 (전체 게시글 기준)
+    # 5. 활동 순위 (전체 기준)
     pipeline = [
         {"$group": {"_id": "$author_id", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
@@ -70,7 +65,6 @@ def home():
     agg_result = list(get_posts_collection().aggregate(pipeline))
     top_users = []
     if agg_result:
-        # 작성자 정보 불러오기
         top_author_ids = [doc["_id"] for doc in agg_result]
         top_authors = list(get_hr_collection().find({"_id": {"$in": top_author_ids}}))
         id_to_name = {a["_id"]: a["name"] for a in top_authors}
@@ -78,13 +72,9 @@ def home():
             name = id_to_name.get(doc["_id"], "알 수 없음")
             top_users.append((name, doc["count"]))
 
-    # 6. 워드 클라우드 URL 설정 (예: static/images/wordcloud.png)
-    # 실제 워드 클라우드 이미지 생성 로직이 있으면 여기에 반영
+    # 6. 워드 클라우드 이미지 경로
     wordcloud_path = os.path.join("static", "images", "wordcloud.png")
-    if os.path.exists(wordcloud_path):
-        wordcloud_url = "/" + wordcloud_path.replace("\\", "/")
-    else:
-        wordcloud_url = None
+    wordcloud_url = "/" + wordcloud_path.replace("\\", "/") if os.path.exists(wordcloud_path) else None
 
     return render_template(
         "write/index.html",
@@ -92,36 +82,9 @@ def home():
         author_map=author_map,
         top_users=top_users,
         wordcloud_url=wordcloud_url,
-        request=request  # 템플릿에서 request.args 쓰려고
+        request=request,
+        selected_category=category
     )
-
-
-@write_bp.route("/free")
-def free_board():
-    posts = list(get_posts_collection().find({"category": "free"}).sort("created_at", -1))
-    author_ids = list(set(post["author_id"] for post in posts))
-    authors = get_hr_collection().find({"_id": {"$in": author_ids}})
-    author_map = {author["_id"]: author["name"] for author in authors}
-    return render_template("write/free.html", posts=posts, author_map=author_map)
-
-
-@write_bp.route("/qna")
-def qna_board():
-    posts = list(get_posts_collection().find({"category": "qna"}).sort("created_at", -1))
-    author_ids = list(set(post["author_id"] for post in posts))
-    authors = get_hr_collection().find({"_id": {"$in": author_ids}})
-    author_map = {author["_id"]: author["name"] for author in authors}
-    return render_template("write/qna.html", posts=posts, author_map=author_map)
-
-
-@write_bp.route("/notice")
-def notice_board():
-    posts = list(get_posts_collection().find({"category": "notice"}).sort("created_at", -1))
-    author_ids = list(set(post["author_id"] for post in posts))
-    authors = get_hr_collection().find({"_id": {"$in": author_ids}})
-    author_map = {author["_id"]: author["name"] for author in authors}
-    return render_template("write/notice.html", posts=posts, author_map=author_map)
-
 
 
 # 게시글 작성 폼
@@ -135,22 +98,25 @@ def write_form():
 def save_post():
     title = request.form.get("title").strip()
     content = request.form.get("content").strip()
+    category = request.form.get("category")  # ✅ 카테고리 추가
 
-    if not title or not content:
+    if not title or not content or not category:
         return "모든 필드를 입력하세요.", 400
 
     post = {
         "title": title,
         "content": content,
+        "category": category,  # ✅ 카테고리 저장
         "author_id": ObjectId(current_user.id),
-        "tags": [],  # 기본은 빈 리스트
+        "tags": [],
         "created_at": datetime.datetime.utcnow(),
         "updated_at": None,
         "comments": []
     }
 
     get_posts_collection().insert_one(post)
-    return redirect(url_for("write.home"))
+    return redirect(url_for("write.home", category=category))  # ✅ 작성 후 해당 카테고리로 리디렉션
+
 
 
 # 게시글 상세보기
@@ -221,7 +187,7 @@ def delete_comment(post_id):
     get_posts_collection().update_one(
         {"_id": ObjectId(post_id)},
         {"$pull": {"comments": {"comment_id": ObjectId(comment_id)}}}
-    )
+    ) 
 
     return redirect(url_for("write.detail", post_id=post_id))
 
