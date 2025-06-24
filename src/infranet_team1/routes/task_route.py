@@ -27,7 +27,7 @@ def get_tasks_collection():
 
 # 업무 메인화면
 @task_bp.route('/', methods=['GET'])
-def index():
+def home():
     team_filter = request.args.get('team')
     status_filter = request.args.get('status')
     start_date = request.args.get('start_date')
@@ -77,7 +77,7 @@ def add_post():
         data['file'] = '첨부파일 없음'
 
     get_tasks_collection().insert_one(data)
-    return redirect(url_for('task.index'))
+    return redirect(url_for('task.home'))
 
 # 업무 수정 폼
 @task_bp.route('/edit/<task_id>', methods=['GET'])
@@ -104,13 +104,13 @@ def edit_post(task_id):
         update['file'] = filename
 
     get_tasks_collection().update_one({'_id': ObjectId(task_id)}, {'$set': update})
-    return redirect(url_for('task.index'))
+    return redirect(url_for('task.home'))
 
 # 업무 삭제 처리 POST함수
 @task_bp.route('/delete/<task_id>', methods=['POST'])
 def delete(task_id):
     get_tasks_collection().delete_one({'_id': ObjectId(task_id)})
-    return redirect(url_for('task.index'))
+    return redirect(url_for('task.home'))
 
 # 첨부파일 다운로드
 @task_bp.route('/uploads/<filename>', methods=['GET'])
@@ -145,6 +145,45 @@ def chart_image():
     plt.bar(dates, doing, bottom=wait, label='진행중')
     plt.bar(dates, done, bottom=[w + d for w, d in zip(wait, doing)], label='완료')
     plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.legend()
+
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    plt.close()
+    img.seek(0)
+    return Response(img.getvalue(), content_type='image/png')
+
+@task_bp.route('/chart-by-team', methods=['GET'])
+def chart_by_team():
+    result = list(get_tasks_collection().aggregate([
+        {"$group": {
+            "_id": {"team": "$team", "status": "$status"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.team": 1}}
+    ]))
+
+    data = {}
+    for item in result:
+        team = item['_id']['team']
+        status = item['_id']['status']
+        if team not in data:
+            data[team] = {'대기중': 0, '진행중': 0, '완료': 0}
+        data[team][status] = item['count']
+
+    teams = list(data.keys())
+    wait = [data[t]['대기중'] for t in teams]
+    doing = [data[t]['진행중'] for t in teams]
+    done = [data[t]['완료'] for t in teams]
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(teams, wait, label='대기중')
+    plt.bar(teams, doing, bottom=wait, label='진행중')
+    plt.bar(teams, done, bottom=[w + d for w, d in zip(wait, doing)], label='완료')
+    plt.title('팀별 업무 상태 분포')
+    plt.ylabel('업무 수')
+    plt.xticks(rotation=0)
     plt.tight_layout()
     plt.legend()
 

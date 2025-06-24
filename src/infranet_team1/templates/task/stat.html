@@ -6,14 +6,18 @@
 </head>
 <body>
     <h2>📊 마감일 기준 상태별 업무 통계</h2>
-
-    <p>아래 차트는 업무의 마감일을 기준으로 상태별 분포(대기중, 진행중, 완료)를 시각화한 것입니다.</p>
-
     <div>
-        <img src="{{ url_for('task.chart_image') }}" alt="업무 상태 통계 차트">
+        <img src="{{ url_for('task.chart_image') }}" alt="마감일 기준 상태별 통계 차트">
+    </div>
+
+    <hr>
+
+    <h2>📊 팀별 업무 상태 분포</h2>
+    <div>
+        <img src="{{ url_for('task.chart_by_team') }}" alt="팀별 업무 상태 스택 차트">
     </div>
 
     <br>
-    <a href="{{ url_for('task.index') }}">← 업무 목록으로 돌아가기</a>
+    <a href="{{ url_for('task.home') }}">← 업무 목록으로 돌아가기</a>
 </body>
 </html>
