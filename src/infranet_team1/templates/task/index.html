@@ -1,40 +1,38 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>업무 조회</title>
+</head>
+<body>
+    <h2>전체/팀별 업무 현황</h2>
+    
+    <a href="{{ url_for('task.stat') }}">📈 업무 통계 보기</a>
 
-{% block title %}업무 현황{% endblock %}
+    <form method="GET" action="{{ url_for('task.index') }}">
+        팀:
+        <select name="team">
+            <option value="전체">전체</option>
+            <option value="개발팀">개발팀</option>
+            <option value="영업팀">영업팀</option>
+        </select>
 
-{% block content %}
-    <h2>📋 전체/팀별 업무 현황</h2>
+        상태:
+        <select name="status">
+            <option value="전체">전체</option>
+            <option value="대기중">대기중</option>
+            <option value="진행중">진행중</option>
+            <option value="완료">완료</option>
+        </select>
 
-    <!-- 필터 폼 -->
-    <form method="get">
-        <label>팀:
-            <select name="team">
-                <option value="전체">전체</option>
-                <option value="개발팀">개발팀</option>
-                <option value="영업팀">영업팀</option>
-            </select>
-        </label>
-
-        <label>상태:
-            <select name="status">
-                <option value="전체">전체</option>
-                <option value="대기중">대기중</option>
-                <option value="진행중">진행중</option>
-                <option value="완료">완료</option>
-            </select>
-        </label>
-
-        <label>시작일: <input type="date" name="start_date"></label>
-        <label>종료일: <input type="date" name="end_date"></label>
-
+        시작일: <input type="date" name="start_date">
+        종료일: <input type="date" name="end_date">
         <button type="submit">필터 적용</button>
     </form>
 
-    <br>
-    <a href="{{ url_for('task.add_form') }}">➕ 업무 추가</a>
+    <a href="{{ url_for('task.add_get') }}">+ 업무 추가</a>
 
-    <!-- 업무 리스트 테이블 -->
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table border="1">
         <thead>
             <tr>
                 <th>제목</th>
@@ -55,16 +53,16 @@
                 <td>{{ task.priority }}</td>
                 <td>{{ task.due_date }}</td>
                 <td>
-                    {% if task.file and task.file != '첨부파일 없음' %}
-                        <a href="{{ url_for('task.uploaded_file', filename=task.file) }}">{{ task.file }}</a>
+                    {% if task.file_url %}
+                        <a href="{{ task.file_url }}">다운로드</a>
                     {% else %}
                         없음
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('task.edit', task_id=task._id) }}">수정</a> /
-                    <form action="{{ url_for('task.delete', task_id=task._id) }}" method="post" style="display:inline;" onsubmit="return confirm('삭제하시겠습니까?')">
-                        <button type="submit" class="contrast outline" style="padding: 2px 6px; font-size: 12px; width: auto;">삭제</button>
+                    <a href="{{ url_for('task.edit_get', task_id=task._id) }}">수정</a>
+                    <form action="{{ url_for('task.delete', task_id=task._id) }}" method="POST" style="display:inline;">
+                        <button type="submit" onclick="return confirm('정말 삭제할까요?')">삭제</button>
                     </form>
                 </td>
             </tr>
@@ -75,10 +73,5 @@
             {% endfor %}
         </tbody>
     </table>
-
-    <hr>
-
-    <!-- 업무 상태별 마감 차트 -->
-   <h3>📊 마감일 기준 상태별 업무 통계</h3>
-    <img src="{{ url_for('task.chart_image') }}" alt="업무 상태별 마감 차트" width="800" height="400">
-{% endblock %}
+</body>
+</html>

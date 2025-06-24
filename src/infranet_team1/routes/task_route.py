@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
 
-task_bp = Blueprint('task', __name__)
+task_bp = Blueprint('task', __name__, url_prefix='/task')
 
 # {
 #   "_id": ObjectId,
@@ -27,7 +27,7 @@ def get_tasks_collection():
 
 # 업무 메인화면
 @task_bp.route('/', methods=['GET'])
-def home():
+def index():
     team_filter = request.args.get('team')
     status_filter = request.args.get('status')
     start_date = request.args.get('start_date')
@@ -39,7 +39,12 @@ def home():
     if status_filter and status_filter != '전체':
         query['status'] = status_filter
     if start_date and end_date:
-        query['due_date'] = {"$gte": start_date, "$lte": end_date}
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            query['due_date'] = {"$gte": start_dt, "$lte": end_dt}
+        except ValueError:
+            pass
 
     task_list = get_tasks_collection().find(query).sort("due_date", -1)
     return render_template('task/index.html', tasks=task_list)
@@ -47,25 +52,24 @@ def home():
 
 # 업무 추가 폼
 @task_bp.route('/add', methods=['GET'])
-def add_form():
+def add_get():
     return render_template('task/add.html')
 
 # 업무 추가 처리 POST함수
 @task_bp.route('/add', methods=['POST'])
-def add():
+def add_post():
     data = {
         'title': request.form['title'],
-        'description': request.form['description'],
+        'team': request.form['team'],
         'status': request.form['status'],
         'priority': request.form['priority'],
-        'team': request.form['team'],
         'due_date': datetime.strptime(request.form['due_date'], '%Y-%m-%d'),
         'created_at': datetime.now(),
         'updated_at': datetime.now(),
     }
 
     file = request.files['file']
-    if file:
+    if file and file.filename:
         filename = secure_filename(file.filename)
         file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
         data['file'] = filename
@@ -73,48 +77,47 @@ def add():
         data['file'] = '첨부파일 없음'
 
     get_tasks_collection().insert_one(data)
-    return redirect(url_for('task.home'))
+    return redirect(url_for('task.index'))
 
 # 업무 수정 폼
 @task_bp.route('/edit/<task_id>', methods=['GET'])
-def edit_form(task_id):
+def edit_get(task_id):
     task = get_tasks_collection().find_one({'_id': ObjectId(task_id)})
     return render_template('task/edit.html', task=task)
 
 # 업무 수정 처리 POST함수
 @task_bp.route('/edit/<task_id>', methods=['POST'])
-def edit(task_id):
+def edit_post(task_id):
     update = {
         'title': request.form['title'],
-        'description': request.form['description'],
+        'team': request.form['team'],
         'status': request.form['status'],
         'priority': request.form['priority'],
-        'team': request.form['team'],
         'due_date': datetime.strptime(request.form['due_date'], '%Y-%m-%d'),
         'updated_at': datetime.now()
     }
 
-    file = request.files['file']
-    if file:
+    file = request.files.get('file')
+    if file and file.filename:
         filename = secure_filename(file.filename)
         file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
         update['file'] = filename
 
     get_tasks_collection().update_one({'_id': ObjectId(task_id)}, {'$set': update})
-    return redirect(url_for('task.home'))
+    return redirect(url_for('task.index'))
 
 # 업무 삭제 처리 POST함수
 @task_bp.route('/delete/<task_id>', methods=['POST'])
 def delete(task_id):
     get_tasks_collection().delete_one({'_id': ObjectId(task_id)})
-    return redirect(url_for('task.home'))
+    return redirect(url_for('task.index'))
 
-
+# 첨부파일 다운로드
 @task_bp.route('/uploads/<filename>', methods=['GET'])
 def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
-
+# 통계 시각화 이미지
 @task_bp.route('/chart-image', methods=['GET'])
 def chart_image():
     result = list(get_tasks_collection().aggregate([
@@ -150,3 +153,7 @@ def chart_image():
     plt.close()
     img.seek(0)
     return Response(img.getvalue(), content_type='image/png')
+
+@task_bp.route('/stat', methods=['GET'])
+def stat():
+    return render_template('task/stat.html')

@@ -37,7 +37,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SECURE=False,
     REMEMBER_COOKIE_HTTPONLY=True,
 )
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)

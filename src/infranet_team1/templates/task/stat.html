@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>업무 통계</title>
+</head>
+<body>
+    <h2>📊 마감일 기준 상태별 업무 통계</h2>
+
+    <p>아래 차트는 업무의 마감일을 기준으로 상태별 분포(대기중, 진행중, 완료)를 시각화한 것입니다.</p>
+
+    <div>
+        <img src="{{ url_for('task.chart_image') }}" alt="업무 상태 통계 차트">
+    </div>
+
+    <br>
+    <a href="{{ url_for('task.index') }}">← 업무 목록으로 돌아가기</a>
+</body>
+</html>

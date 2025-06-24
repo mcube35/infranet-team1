@@ -1,83 +1,35 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>업무 추가</title>
+</head>
+<body>
+    <h2>업무 등록</h2>
 
-{% block title %}업무 등록{% endblock %}
-
-{% block content %}
-<h1>📝 업무 등록</h1>
-
-<!-- 팀별 탭 -->
-<div style="margin-bottom: 20px;">
-    <strong>팀 선택:</strong>
-    <button type="button" onclick="selectTeam('개발팀')">개발팀</button>
-    <button type="button" onclick="selectTeam('영업팀')">영업팀</button>
-</div>
-
-<!-- 업무 카테고리 탭 (예시) -->
-<div style="margin-bottom: 20px;">
-    <strong>업무 카테고리:</strong>
-    <button type="button">기획</button>
-    <button type="button">디자인</button>
-    <button type="button">개발</button>
-</div>
-
-<!-- 등록 폼 -->
-<form method="POST" enctype="multipart/form-data">
-    <input type="hidden" name="team" id="teamInput" value="개발팀">
-
-    <label>제목:
-        <input type="text" name="title" required>
-    </label><br><br>
-
-    <label>상세 설명:<br>
-        <textarea name="description" rows="4" cols="60" required></textarea>
-    </label><br><br>
-
-    <label>상태:
-        <select name="status" required onchange="updateProgress(this.value)">
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('task.add_get') }}">
+        제목: <input type="text" name="title" required><br>
+        팀:
+        <select name="team">
+            <option value="개발팀">개발팀</option>
+            <option value="영업팀">영업팀</option>
+        </select><br>
+        상태:
+        <select name="status">
             <option value="대기중">대기중</option>
             <option value="진행중">진행중</option>
             <option value="완료">완료</option>
-        </select>
-    </label>
-
-    <!-- 진행률 바 -->
-    <div style="width: 300px; background-color: #eee; border-radius: 5px; margin-top: 10px;">
-        <div id="progressBar" style="width: 0%; background-color: #4caf50; height: 15px; border-radius: 5px;"></div>
-    </div><br>
-
-    <label>우선순위:
-        <select name="priority" required>
+        </select><br>
+        우선순위:
+        <select name="priority">
             <option value="낮음">낮음</option>
-            <option value="보통" selected>보통</option>
+            <option value="보통">보통</option>
             <option value="높음">높음</option>
-        </select>
-    </label><br><br>
+        </select><br>
+        마감일: <input type="date" name="due_date"><br>
+        첨부파일: <input type="file" name="file"><br>
 
-    <label>마감일:
-        <input type="date" name="due_date" required>
-    </label><br><br>
-
-    <label>첨부파일:
-        <input type="file" name="file">
-    </label><br><br>
-
-    <button type="submit">등록</button>
-    <a href="{{ url_for('task.home') }}">취소</a>
-</form>
-
-<script>
-function selectTeam(team) {
-    document.getElementById('teamInput').value = team;
-    alert("선택된 팀: " + team);
-}
-
-function updateProgress(status) {
-    const bar = document.getElementById("progressBar");
-    let percent = 0;
-    if (status === "대기중") percent = 0;
-    else if (status === "진행중") percent = 50;
-    else if (status === "완료") percent = 100;
-    bar.style.width = percent + "%";
-}
-</script>
-{% endblock %}
+        <button type="submit">등록</button>
+    </form>
+</body>
+</html>
