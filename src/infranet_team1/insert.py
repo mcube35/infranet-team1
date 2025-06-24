@@ -5,12 +5,12 @@ import bcrypt
 client = MongoClient("mongodb://localhost:27017/")
 db = client["infranet"]
 
-password_plain = "123"
+password_plain = "bomi"
 hashed_password = bcrypt.hashpw(password_plain.encode("utf-8"), bcrypt.gensalt())
 
 hr_data = {
     "name": "system",
-    "email": "system@gmail.com",
+    "email": "bomi@gmail.com",
     "password": hashed_password,
     "position": "개발자",
     "department": "IT팀",
