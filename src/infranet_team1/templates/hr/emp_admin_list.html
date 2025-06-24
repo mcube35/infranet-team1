@@ -5,88 +5,70 @@
 {% block content %}
 <h1>👥 직원 목록 (관리자용)</h1>
 
-<p>
-    <a href="{{ url_for('emp_admin.employee_create_form') }}">➕ 신규 직원 등록</a>
-</p>
+<p><a href="{{ url_for('emp_admin.employee_create_form') }}"><button type="button">➕ 신규 직원 등록</button></a></p>
 
 <table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">
     <thead>
         <tr style="background-color: #f2f2f2;">
-            <th>No.</th>
-            <th>이름</th>
+            <th style="width: 5%;">No.</th>
+            <th style="width: 15%;">이름</th>
             <th>부서</th>
             <th>직위</th>
+            <th>직무</th>
             <th>이메일</th>
             <th>입사일</th>
-            <th>상태</th>
-            <th>관리</th>
+            <th>퇴사일</th>
+            <th style="width: 8%;">상태</th>
+            <th style="width: 10%;">수정</th>
         </tr>
     </thead>
     <tbody>
         {% if employees %}
             {% for employee in employees %}
             <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ employee.name }}</td>
+                <td style="text-align: center;">{{ total_records - ((current_page - 1) * page_size) - loop.index0 }}</td>
+                <td style="text-align: center;">
+                    {% if employee.profile_image_id %}<img src="{{ url_for('file_download', file_id=employee.profile_image_id) }}" alt="." width="30" height="30" style="border-radius: 50%; vertical-align: middle; margin-right: 8px;">
+                    {% else %}<span style="display: inline-block; width: 30px; height: 30px; background-color: #eee; border-radius: 50%; vertical-align: middle; margin-right: 8px;"></span>{% endif %}
+                    {{ employee.name }}
+                </td>
                 <td>{{ employee.department }}</td>
                 <td>{{ employee.position }}</td>
+                <td>{{ employee.job_title or '-'}}</td>
                 <td>{{ employee.email }}</td>
-                <td>{{ employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '-' }}</td>
-                <td>{{ employee.status }}</td>
-                <td>
-                    <a href="{{ url_for('emp_admin.employee_edit_form', employee_id=employee._id) }}">상세/수정</a>
-                    
+                <td style="text-align: center;">{{ employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '-' }}</td>
+                
+                {# 2. '퇴사일' 데이터 표시 (조건부) #}
+                <td style="text-align: center;">
+                    {% if employee.status == '퇴사' and employee.updated_at %}
+                        {{ employee.updated_at.strftime('%Y-%m-%d') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td style="text-align: center;">{{ employee.status }}</td>
+                <td style="text-align: center;">
+                    <a href="{{ url_for('emp_admin.employee_edit_form', employee_id=employee._id) }}" title="상세/수정" style="font-size: 1.2em; text-decoration: none;">✏️</a>
                     {% if employee.status in ['재직중', '휴직'] %}
-                    |
-                    <form action="{{ url_for('emp_admin.employee_deactivate', employee_id=employee._id) }}" method="post" style="display: inline;">
-                        <input type="submit" value="비활성화" 
-                            onclick="return confirm('정말 이 직원을 비활성화(퇴사 처리)하시겠습니까?');"
-                            style="background: none; border: none; padding: 0; cursor: pointer; color: red; text-decoration: underline;">
+                    <form action="{{ url_for('emp_admin.employee_deactivate', employee_id=employee._id) }}" method="post" style="display: inline; margin-left: 10px;">
+                        <button type="submit" title="비활성화(퇴사)" onclick="return confirm('정말 이 직원을 비활성화(퇴사 처리)하시겠습니까?');"
+                                style="background: none; border: none; padding: 0; cursor: pointer; font-size: 1.2em;">🚫</button>
                     </form>
                     {% endif %}
                 </td>
             </tr>
             {% endfor %}
         {% else %}
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 20px;">
-                    {% if search_keyword or search_status or start_date or end_date %}
-                        검색 결과가 없습니다.
-                    {% else %}
-                        등록된 직원이 없습니다.
-                    {% endif %}
-                </td>
-            </tr>
+            <tr><td colspan="9" style="text-align: center; padding: 20px;">
+                {% if search_keyword or search_status or start_date or end_date %}검색 결과가 없습니다.
+                {% else %}등록된 직원이 없습니다.{% endif %}
+            </td></tr>
         {% endif %}
     </tbody>
 </table>
 
-<!-- 하단 검색 폼 -->
-<div style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; background-color:#f9f9f9; text-align: center;">
-    <form method="GET" action="{{ url_for('emp_admin.employee_list') }}" style="display: inline-block;">
-        <select name="search_category">
-            <option value="name" {% if search_category == 'name' %}selected{% endif %}>이름</option>
-            <option value="department" {% if search_category == 'department' %}selected{% endif %}>부서</option>
-            <option value="position" {% if search_category == 'position' %}selected{% endif %}>직위</option>
-        </select>
-        <input type="text" name="search_keyword" placeholder="검색어" value="{{ search_keyword or '' }}" size="15">
-
-        <label for="status">상태:</label>
-        <select name="status" id="status">
-            <option value="">전체</option>
-            <option value="재직중" {% if search_status == '재직중' %}selected{% endif %}>재직중</option>
-            <option value="퇴사" {% if search_status == '퇴사' %}selected{% endif %}>퇴사</option>
-            <option value="휴직" {% if search_status == '휴직' %}selected{% endif %}>휴직</option>
-        </select>
-
-        <label for="start_date">입사일:</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
-        ~
-        <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
-
-        <button type="submit">🔍 검색</button>
-        <a href="{{ url_for('emp_admin.employee_list') }}"><button type="button">🔄 초기화</button></a>
-    </form>
-</div>
-
+{# (검색 폼, 페이지네이션) #}
+<fieldset style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; background-color:#f9f9f9;"><legend><strong>직원 검색</strong></legend><div style="text-align: center;"><form method="GET" action="{{ url_for('emp_admin.employee_list') }}" style="display: inline-block;"><select name="search_category"><option value="name" {% if search_category == 'name' %}selected{% endif %}>이름</option><option value="department" {% if search_category == 'department' %}selected{% endif %}>부서</option><option value="position" {% if search_category == 'position' %}selected{% endif %}>직위</option></select><input type="text" name="search_keyword" placeholder="검색어" value="{{ search_keyword or '' }}" size="15"><label for="status" style="margin-left:10px;">상태:</label><select name="status" id="status"><option value="">전체</option><option value="재직중" {% if search_status == '재직중' %}selected{% endif %}>재직중</option><option value="퇴사" {% if search_status == '퇴사' %}selected{% endif %}>퇴사</option><option value="휴직" {% if search_status == '휴직' %}selected{% endif %}>휴직</option></select><label for="start_date" style="margin-left:10px;">입사일:</label><input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}"> ~ <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}"><button type="submit" style="margin-left:10px;">🔍 검색</button><a href="{{ url_for('emp_admin.employee_list') }}"><button type="button">🔄 초기화</button></a></form></div></fieldset>
+<div class="pagination" style="text-align: center; margin-top: 20px;">{% if total_pages > 0 %}{% set query_params = request.args.to_dict() %}{% if current_page > 1 %}{% set _ = query_params.update({'page': current_page - 1}) %}<a href="{{ url_for('emp_admin.employee_list', **query_params) }}" style="text-decoration: none; padding: 5px;">« 이전</a>{% else %}<span style="color: grey; padding: 5px;">« 이전</span>{% endif %}{% for page_num in range(1, total_pages + 1) %}{% if page_num == current_page %}<strong style="padding: 5px; color: black;">{{ page_num }}</strong>{% else %}{% set _ = query_params.update({'page': page_num}) %}<a href="{{ url_for('emp_admin.employee_list', **query_params) }}" style="text-decoration: none; padding: 5px;">{{ page_num }}</a>{% endif %}{% endfor %}{% if current_page < total_pages %}{% set _ = query_params.update({'page': current_page + 1}) %}<a href="{{ url_for('emp_admin.employee_list', **query_params) }}" style="text-decoration: none; padding: 5px;">다음 »</a>{% else %}<span style="color: grey; padding: 5px;">다음 »</span>{% endif %}{% endif %}</div>
 {% endblock %}

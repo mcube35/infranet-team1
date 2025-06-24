@@ -54,7 +54,7 @@
 
             <div class="menu-item">
                 <a href="#">고객사 관리</a>
-                 <div class="dropdown-menu">
+                <div class="dropdown-menu">
                     <a href="{{ url_for('client.show_list') }}">고객사 조회 및 관리</a>
                 </div>
             </div>
@@ -76,7 +76,7 @@
 
         <!-- 오른쪽: 사용자 정보 및 액션 -->
         <div class="header-section header-right">
-             {% if current_user.is_authenticated %}
+            {% if current_user.is_authenticated %}
                 <div class="user-box">
                     <img src="{{ url_for('file_download', file_id=current_user.profile_image_id) if current_user.profile_image_id else url_for('static', filename='img/user_icon.png') }}" alt="프로필 사진" class="avatar" />
                     <div class="user-info-dropdown">
@@ -101,6 +101,18 @@
         {% block content %}{% endblock %}
     </main>
 </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <script>
+        {% for message in messages %}
+            if (!"{{ message }}".startsWith('saved_')) {
+            alert("{{ message }}");
+            }
+        {% endfor %}
+        </script>
+    {% endif %}
+    {% endwith %}
 
 </body>
 </html>
