@@ -3,77 +3,91 @@
 {% block title %}근태 관리{% endblock %}
 
 {% block content %}
-<h1>근태 관리 페이지</h1>
+<h1>📅 근태 관리 페이지</h1>
+<p><strong>{{ current_user.name }}</strong>님의 근태 기록입니다.</p>
+<hr>
 
-{% with messages = get_flashed_messages(with_categories=True) %}
-    {% if messages %}
-        <ul>
-        {% for category, message in messages %}
-            <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
-
-<div>
-    {# 출근하기 버튼 #}
-    {% if not today_record or not today_record.get('clock_in') %}
-        <form action="{{ url_for('att.clock_in') }}" method="post" style="display:inline;">
-            <button class="small_ui" type="submit">출근하기</button>
+<!-- 1. 출근/퇴근 버튼 영역 -->
+<div style="margin-bottom: 20px;">
+    {% if not today_record or not today_record.clock_in %}
+        <form action="{{ url_for('att.clock_in') }}" method="post" style="display: inline;">
+            <button type="submit">출근하기</button>
         </form>
-    {% endif %}
-
-    {# 퇴근하기 버튼 #}
-    {% if today_record and today_record.get('clock_in') and not today_record.get('clock_out') %}
-        <form action="{{ url_for('att.clock_out') }}" method="post" style="display:inline;">
-            <button class="small_ui" type="submit">퇴근하기</button>
+    {% elif not today_record.clock_out %}
+        <form action="{{ url_for('att.clock_out') }}" method="post" style="display: inline;">
+            <button type="submit">퇴근하기</button>
         </form>
+    {% else %}
+        <span>✅ 오늘은 모든 기록을 마쳤습니다.</span>
     {% endif %}
-
-    <script>
-    function confirmClockOut() {
-    return confirm("정말 퇴근하시겠습니까?");
-}
-</script>
 </div>
 
-<div>
-    <form action="{{ url_for('att.show_list') }}" method="get">
-        <label for="start_date">시작 날짜:</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else '' }}">
-        <label for="end_date">종료 날짜:</label>
-        <input type="date" id="end_date" name="end_date" value="{{ end_date if end_date else '' }}">
-        <button type="submit">필터링</button>
-    </form>
-</div>
 
 <h3>내 근태 기록</h3>
-<table>
+
+{% set flashed_messages = get_flashed_messages(with_categories=true) %}
+
+<table border="1" style="width: 100%; border-collapse: collapse;">
     <thead>
-        <tr>
-            <th>날짜</th>
-            <th>출근 시간</th>
-            <th>퇴근 시간</th>
-            <th>근무 시간</th>
-            <th>상태</th>
-            <th>비고</th>
+        <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px;">날짜</th>
+            <th style="padding: 8px;">출근 시간</th>
+            <th style="padding: 8px;">퇴근 시간</th>
+            <th style="padding: 8px;">총 근무 시간</th>
+            <th style="padding: 8px;">상태</th>
+            <th style="padding: 8px; width: 25%; min-width: 200px;">비고</th>
         </tr>
     </thead>
     <tbody>
         {% for record in records %}
         <tr>
-            <td>{{ record.date }}</td>
-            <td>{{ record.clock_in }}</td>
-            <td>{{ record.clock_out }}</td>
-            <td>{{ record.working_time }}</td>
-            <td>{{ record.status }}</td>
-            <td>{{ record.memo }}</td>
+            <td style="text-align: center; padding: 8px;">{{ record.date }}</td>
+            <td style="text-align: center; padding: 8px;">{{ record.clock_in }}</td>
+            <td style="text-align: center; padding: 8px;">{{ record.clock_out }}</td>
+            <td style="text-align: center; padding: 8px;">{{ record.working_time }}</td>
+            <td style="text-align: center; padding: 8px;">
+                {% if record.status == '정상' %}<strong style="color: green;">✅ 정상</strong>
+                {% elif record.status == '지각' %}<strong style="color: orange;">🕖 지각</strong>
+                {% elif record.status == '결근' %}<strong style="color: red;">❌ 결근</strong>
+                {% else %}{{ record.status }}{% endif %}
+            </td>
+            <td>
+                <form action="{{ url_for('att.save_memo', record_id=record._id, page=current_page, start_date=start_date, end_date=end_date) }}" method="post" style="display: flex; align-items: center;">
+                    <input type="text" name="memo" value="{{ record.memo }}" placeholder="비고 입력..." style="flex-grow: 1; margin-right: 5px; border: 1px solid #ccc; padding: 4px; font-size: 0.9em;">
+                    <button type="submit" title="저장하기" style="background:none; border:none; padding:0; cursor:pointer; font-size: 1.3em; margin-right: 5px;">💾</button>
+                    {% for category, message in flashed_messages %}{% if message == 'saved_' + record._id|string %}<span style="color: green; font-weight: bold; font-size: 0.8em; margin-left: auto;">✅ 저장됨</span>{% endif %}{% endfor %}
+                </form>
+            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="6">근태 기록이 없습니다.</td>
+            <td colspan="6" style="text-align: center; padding: 20px;">표시할 근태 기록이 없습니다.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+{# 페이지네이션 영역이 여기에서 하단으로 이동했습니다. #}
+
+<hr style="margin-top: 30px;">
+
+<!-- 기간별 조회 필터링 영역 -->
+<fieldset>
+    <legend><strong>기간별 조회</strong></legend>
+    <form method="GET" action="{{ url_for('att.show_list') }}" style="margin-top: 10px;">
+        <label for="start_date">시작 날짜:</label><input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+        <label for="end_date" style="margin-left: 10px;">종료 날짜:</label><input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+        <button type="submit" style="margin-left: 10px;">🔍 필터링</button>
+    </form>
+</fieldset>
+
+<!--  페이지네이션 영역이 이 위치로 이동했습니다.  -->
+<div class="pagination" style="text-align: center; margin-top: 20px;">
+    {% if total_pages > 0 %}
+        {% if current_page > 1 %}<a href="{{ url_for('att.show_list', page=current_page - 1, start_date=start_date, end_date=end_date) }}" style="text-decoration: none; padding: 5px;">« 이전</a>{% else %}<span style="color: grey; padding: 5px;">« 이전</span>{% endif %}
+        {% for page_num in range(1, total_pages + 1) %}{% if page_num == current_page %}<strong style="padding: 5px; color: black;">{{ page_num }}</strong>{% else %}<a href="{{ url_for('att.show_list', page=page_num, start_date=start_date, end_date=end_date) }}" style="text-decoration: none; padding: 5px;">{{ page_num }}</a>{% endif %}{% endfor %}
+        {% if current_page < total_pages %}<a href="{{ url_for('att.show_list', page=current_page + 1, start_date=start_date, end_date=end_date) }}" style="text-decoration: none; padding: 5px;">다음 »</a>{% else %}<span style="color: grey; padding: 5px;">다음 »</span>{% endif %}
+    {% endif %}
+</div>
+
 {% endblock %}

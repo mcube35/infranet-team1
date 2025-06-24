@@ -1,23 +1,19 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>업무 통계</title>
-</head>
-<body>
-    <h2>📊 마감일 기준 상태별 업무 통계</h2>
-    <div>
-        <img src="{{ url_for('task.chart_image') }}" alt="마감일 기준 상태별 통계 차트">
-    </div>
+{% extends "base.html" %}
+{% block title %}업무 통계{% endblock %}
 
-    <hr>
+{% block content %}
+<h1>📊 마감일 기준 상태별 업무 통계</h1>
+<div>
+    <img src="{{ url_for('task.chart_image') }}" alt="마감일 기준 상태별 통계 차트">
+</div>
 
-    <h2>📊 팀별 업무 상태 분포</h2>
-    <div>
-        <img src="{{ url_for('task.chart_by_team') }}" alt="팀별 업무 상태 스택 차트">
-    </div>
+<hr>
 
-    <br>
-    <a href="{{ url_for('task.home') }}">← 업무 목록으로 돌아가기</a>
-</body>
-</html>
+<h1>📊 팀별 업무 상태 분포</h1>
+<div>
+    <img src="{{ url_for('task.chart_by_team') }}" alt="팀별 업무 상태 스택 차트">
+</div>
+
+<br>
+<a href="{{ url_for('task.home') }}">← 업무 목록으로 돌아가기</a>
+{% endblock %}

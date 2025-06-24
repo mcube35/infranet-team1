@@ -1,74 +1,220 @@
-html {
-  font-size: 90%; 
+/* static/css/style.css */
+
+:root {
+    --bg-color: #f0f2f5;
+    --sheet-bg-color: #ffffff;
+    --primary-text-color: #111;
+    --secondary-text-color: #555;
+    --border-color: #f0f0f0;
+    --accent-color: #000;
+    --dropdown-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
-button, input, select, textarea {
-  font-size: 1rem;
-  padding: 0.4rem 0.6rem;
+body {
+    font-family: 'Pretendard', sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
-.small_ui {
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.main-sheet {
+    width: 95%;
+    max-width: 1600px;
+    height: 90vh;
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
 }
 
-table {
-  font-size: 0.9rem;
+/* --- 1. 헤더 디자인 --- */
+.app-header {
+    background-color: var(--sheet-bg-color);
+    padding: 1.5rem 2.5rem;
+    border-radius: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
 }
 
-.user-info {
-  font-size: 13px;
+.header-section {
+    display: flex;
+    align-items: center;
 }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
+.header-left .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-decoration: none;
+    color: var(--primary-text-color);
 }
 
+.header-center {
+    gap: 1.5rem;
+}
+
+/* ★★★ 드롭다운 UX 개선 #1: 메뉴 아이템 전체를 호버 대상으로 설정 ★★★ */
+.menu-item {
+    position: relative;
+    /* 상위 메뉴와 하위 메뉴 사이의 간격을 만들기 위해 패딩 추가 */
+    padding-bottom: 10px; 
+    margin-bottom: -10px; /* 패딩으로 인해 레이아웃이 밀리는 것을 방지 */
+}
+
+.menu-item > a {
+    text-decoration: none;
+    color: var(--secondary-text-color);
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: color 0.2s, background-color 0.2s;
+    display: block;
+}
+
+.menu-item:hover > a {
+    color: var(--primary-text-color);
+    background-color: #f5f5f5;
+}
+
+/* ★★★ 드롭다운 UX 개선 #2: 드롭다운 메뉴 스타일 및 전환 효과 수정 ★★★ */
+.dropdown-menu {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    
+    /* ★ 사라질 때 약간의 딜레이를 주어 마우스 이동을 쉽게 함 */
+    transition: opacity 0.2s ease, visibility 0s linear 0.2s, transform 0.2s ease;
+
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: var(--dropdown-shadow);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    border: 1px solid var(--border-color);
+    z-index: 1001;
+}
+
+/* ★★★ 드롭다운 UX 개선 #3: 호버 시 나타나는 로직 수정 ★★★ */
+.menu-item:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    /* ★ 나타날 때는 딜레이 없이 즉시 반응하도록 설정 */
+    transition: opacity 0.2s ease, visibility 0s linear 0s, transform 0.2s ease;
+}
+
+
+.dropdown-menu a {
+    text-decoration: none;
+    color: var(--secondary-text-color);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.dropdown-menu a:hover {
+    background-color: #f5f5f5;
+    color: var(--primary-text-color);
+}
+
+.dropdown-menu hr {
+    border: none;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 4px 6px;
+}
+
+
+/* ★★★ 사용자 정보 드롭다운 UX 개선 (동일한 원리 적용) ★★★ */
+.header-right {
+    gap: 1rem;
+}
 .user-box {
-  position: relative;
-  display: inline-block;
+    position: relative;
+    padding-bottom: 10px; /* 호버 영역 확보 */
+    margin-bottom: -10px;
+}
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
 }
 
-.user-info {
-  display: none;
-  position: absolute;
-  top: 120%;
-  right: 0;
-  background-color: white;
-  border: 1px solid #ccc;
-  padding: 0.8rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  white-space: nowrap;
-  z-index: 100;
+.user-info-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, visibility 0s linear 0.2s, transform 0.2s ease;
+
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 240px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: var(--dropdown-shadow);
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.user-box:hover .user-info-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, visibility 0s linear 0s, transform 0.2s ease;
+}
+.user-info-dropdown strong { font-weight: 600; }
+.user-info-dropdown span { font-size: 0.9rem; color: var(--secondary-text-color); }
+.user-info-dropdown hr { border: none; height: 1px; background-color: var(--border-color); margin: 6px 0; }
+.button-logout {
+    width: 100%;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.button-logout:hover { opacity: 0.8; }
+
+
+/* --- 2. 메인 콘텐츠 영역 (변경 없음) --- */
+.content-body {
+    flex-grow: 1;
+    background-color: var(--sheet-bg-color);
+    margin-top: -20px;
+    padding-top: 40px; 
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+    padding-bottom: 2.5rem;
+    border-radius: 32px;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
 }
 
-.user-box:hover .user-info {
-  display: block;
-}
-
-aside details {
-  margin: 0;
-  padding: 0.4rem 0;
-}
-
-aside ul {
-  margin: 0.4rem 0 0 1rem;
-  padding: 0;
-  list-style: none;
-}
-
-aside ul li a {
-  text-decoration: none;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  height: 100vh;
+.content-body h1, .content-body h2, .content-body h3 {
+    margin-top: 0;
+    color: var(--primary-text-color);
+    font-weight: 700;
 }

@@ -1,168 +1,131 @@
 {% extends "base.html" %}
-
 {% block title %}새 게시글 작성{% endblock %}
 
 {% block content %}
 <div class="container">
-  <h1>새 게시글 작성 ({{ current_family | capitalize }} 이슈)</h1> {# 작성 페이지 제목에 Family 이름 추가 #}
+  <h1>새 게시글 작성 ({{ current_family | capitalize }} 이슈)</h1>
 
-  <!-- 게시글 작성 폼 -->
-  {# 폼 제출 action에도 family_name 파라미터 추가 #}
   <form id="postForm" method="POST" action="{{ url_for('issue.write', family_name=current_family) }}" onsubmit="return validateForm()">
-    <!-- 진행상태 입력 필드 (비활성화됨, '신규' 고정) -->
+    <!-- 진행상태 -->
     <div>
       <label>진행상태:</label>
       <input type="text" value="{{ category_name }}" disabled class="category-input" />
-      <input type="hidden" name="status_id" value="1" /> {# '신규' 상태 ID 고정 #}
+      <input type="hidden" name="status_id" value="1" />
     </div>
 
-    <!-- 고객사 입력 필드 (동적 검색 및 선택) -->
+    <!-- 고객사 검색 -->
     <div>
       <label for="clientSearchInput">고객사:</label>
-      <input type="text" id="clientSearchInput" placeholder="고객사 이름 또는 ID 검색 (선택 사항)" autocomplete="off" />
-      {# 선택된 고객사 ID를 저장할 숨겨진 필드. 이제 required 속성 없음 #}
-      <input type="hidden" name="client_company_id" id="hiddenClientCompanyId" />
-      {# 선택된 고객사 이름을 사용자에게 표시할 영역 #}
-      <span id="selectedClientNameDisplay" style="margin-left: 10px; font-weight: bold; color: green;"></span>
-      {# 고객사 검색 결과를 동적으로 표시할 영역 #}
-      <ul id="clientSuggestions" style="border: 1px solid #ccc; list-style: none; padding: 0; margin-top: 5px; max-height: 200px; overflow-y: auto; display: none;"></ul>
+      <input type="text" id="clientSearchInput" placeholder="고객사 이름 또는 ID 검색 (필수)" autocomplete="off" />
+      <input type="hidden" name="client_company_id" id="hiddenClientCompanyId" required />
+      {# 이 span은 이제 텍스트를 표시하지 않고 비워둡니다. #}
+      <span id="selectedClientNameDisplay" class="selected-client" style="margin-left: 10px; font-weight: bold; color: green;"></span>
+      <ul id="clientSuggestions" class="suggestion-list"></ul>
     </div>
 
-    <!-- 제목 입력 필드 -->
+    <!-- 제목 및 내용 -->
     <div>
       <label for="postTitle">제목:</label>
       <input type="text" id="postTitle" name="title" placeholder="게시글 제목을 입력하세요" required />
     </div>
 
-    <!-- 내용 입력 필드 (텍스트 영역) -->
     <div>
       <label for="postContent">내용:</label>
       <textarea id="postContent" name="description" placeholder="게시글 내용을 작성하세요" rows="8" required></textarea>
     </div>
 
-    <!-- 버튼 영역 -->
-    <div style="margin-top: 20px;">
+    <!-- 버튼 -->
+    <div class="button-group">
       <button type="submit">작성</button>
-      {# 취소 버튼 링크를 현재 family의 목록 페이지로 연결합니다. #}
       <a href="{{ url_for('issue.show_list', family_name=current_family) }}">취소</a>
     </div>
   </form>
 </div>
 
-<!-- 커스텀 모달 UI -->
-<div id="customModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
-  <div style="background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-    <p id="modalMessage" style="margin-bottom: 15px;"></p>
-    <button onclick="hideModal()">확인</button>
-  </div>
-</div>
-
-<!-- JavaScript 스크립트 -->
 <script>
-  // 커스텀 모달을 표시하는 함수
-  function showModal(message) {
-    document.getElementById('modalMessage').innerText = message;
-    document.getElementById('customModal').style.display = 'flex';
-  }
+  const form = document.getElementById('postForm');
+  const clientInput = document.getElementById('clientSearchInput');
+  const clientIdHidden = document.getElementById('hiddenClientCompanyId');
+  const clientList = document.getElementById('clientSuggestions');
+  const clientDisplay = document.getElementById('selectedClientNameDisplay'); // 이 요소는 이제 비워집니다.
+  const postTitleInput = document.getElementById('postTitle');
+  const postContentTextarea = document.getElementById('postContent');
 
-  // 커스텀 모달을 숨기는 함수
-  function hideModal() {
-    document.getElementById('customModal').style.display = 'none';
-  }
-
-  // 폼 유효성 검사 함수
   function validateForm() {
-    const titleInput = document.getElementById('postTitle');
-    const contentTextarea = document.getElementById('postContent');
-
-    const title = titleInput.value.trim();
-    const content = contentTextarea.value.trim();
-
-    if (title === '') {
-      showModal('제목을 입력해주세요.');
-      titleInput.focus();
-      return false;
+    if (!postTitleInput.checkValidity()) {
+        postTitleInput.reportValidity();
+        return false;
+    }
+    if (!postContentTextarea.checkValidity()) {
+        postContentTextarea.reportValidity();
+        return false;
     }
 
-    if (content === '') {
-      showModal('내용을 입력해주세요.');
-      contentTextarea.focus();
+    if (!clientIdHidden.value.trim()) {
+      clientInput.setCustomValidity('고객사를 선택해주세요.');
+      clientInput.reportValidity();
+      clientInput.focus();
       return false;
+    } else {
+      clientInput.setCustomValidity(''); 
     }
+    
     return true;
   }
 
-  // --- 고객사 검색 및 선택 관련 JavaScript 로직 (변동 없음) ---
-  const clientSearchInput = document.getElementById('clientSearchInput');
-  const clientSuggestions = document.getElementById('clientSuggestions');
-  const hiddenClientCompanyId = document.getElementById('hiddenClientCompanyId');
-  const selectedClientNameDisplay = document.getElementById('selectedClientNameDisplay');
-
+  // 고객사 자동 검색
   let searchTimeout;
-
-  clientSearchInput.addEventListener('keyup', function() {
+  clientInput.addEventListener('keyup', () => {
     clearTimeout(searchTimeout);
-    const searchTerm = this.value.trim();
+    const term = clientInput.value.trim();
 
-    if (searchTerm.length < 2) {
-      clientSuggestions.style.display = 'none';
-      clientSuggestions.innerHTML = '';
-      hiddenClientCompanyId.value = '';
-      selectedClientNameDisplay.innerText = '';
+    clientInput.setCustomValidity('');
+
+    if (!term) { // 검색어가 비어있을 때
+      clientList.style.display = 'none';
+      clientIdHidden.value = '';
+      clientDisplay.innerText = ''; // 이 부분도 초기화하여 텍스트를 없앱니다.
       return;
     }
 
-    searchTimeout = setTimeout(function() {
+    searchTimeout = setTimeout(() => {
       fetch('{{ url_for("issue.search_client") }}', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ search_term: searchTerm })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ search_term: term })
       })
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
-        clientSuggestions.innerHTML = '';
-        if (data.length > 0) {
+        clientList.innerHTML = '';
+        if (data.length) {
           data.forEach(client => {
             const li = document.createElement('li');
+            li.innerText = `${client.name} (${client.id})`;
             li.style.padding = '8px';
             li.style.cursor = 'pointer';
             li.style.borderBottom = '1px solid #eee';
-            li.innerText = `${client.name} (${client.id})`;
-            li.dataset.clientId = client.id;
-            li.dataset.clientName = client.name;
-            
-            li.addEventListener('click', function() {
-              clientSearchInput.value = client.name;
-              hiddenClientCompanyId.value = client.id;
-              selectedClientNameDisplay.innerText = `선택됨: ${client.name}`;
-              clientSuggestions.style.display = 'none';
-              clientSuggestions.innerHTML = '';
-            });
-            clientSuggestions.appendChild(li);
+
+            li.onclick = () => {
+              clientInput.value = client.name;
+              clientIdHidden.value = client.id;
+              clientDisplay.innerText = ''; // 이 부분을 빈 문자열로 변경하여 텍스트를 없앱니다.
+              clientList.style.display = 'none';
+              clientInput.setCustomValidity('');
+            };
+            clientList.appendChild(li);
           });
-          clientSuggestions.style.display = 'block';
         } else {
-          clientSuggestions.style.display = 'none';
-          clientSuggestions.innerHTML = '<li style="padding: 8px;">검색 결과 없음</li>';
+          clientList.innerHTML = '<li style="color:#888; padding: 8px;">검색 결과 없음</li>';
         }
+        clientList.style.display = 'block';
       })
-      .catch(error => {
-        console.error('고객사 검색 오류:', error);
-        clientSuggestions.style.display = 'none';
-      });
+      .catch(console.error);
     }, 300);
   });
 
-  clientSearchInput.addEventListener('blur', function() {
-    setTimeout(() => {
-      clientSuggestions.style.display = 'none';
-    }, 200);
+  clientInput.addEventListener('blur', () => {
+    setTimeout(() => clientList.style.display = 'none', 200);
   });
-
-  clientSuggestions.addEventListener('mousedown', function(event) {
-      event.preventDefault();
-  });
+  clientList.addEventListener('mousedown', e => e.preventDefault());
 </script>
 {% endblock %}

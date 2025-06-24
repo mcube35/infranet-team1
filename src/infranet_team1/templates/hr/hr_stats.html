@@ -3,31 +3,61 @@
 
 {% block content %}
 <h1>📊 인사 통계 대시보드</h1>
-
-<h3>주요 현황</h3>
-<p><strong>총 직원 수:</strong> {{ total_employees }} 명</p>
-
+<p>회사 전체의 인력 현황에 대한 주요 지표를 시각화하여 보여줍니다.</p>
 <hr>
 
-<!-- 차트들을 테이블로 감싸서 보기 좋게 배치 -->
+<!-- 주요 현황판 -->
+<fieldset style="margin-bottom: 20px;">
+    <legend><strong>주요 현황</strong></legend>
+    <div style="padding: 15px; font-size: 1.1em; text-align: center;">
+        <strong>총 직원:</strong> {{ total_employees }}명  | 
+        <strong style="color: green;">재직:</strong> {{ active_employees }}명  | 
+        <strong style="color: orange;">휴직:</strong> {{ on_leave_employees }}명  | 
+        <strong style="color: red;">퇴사:</strong> {{ resigned_employees }}명
+    </div>
+</fieldset>
+
+<!-- 차트 영역 (2x3 그리드) -->
 <table style="width: 100%; border-spacing: 20px; border-collapse: separate;">
     <tr>
-        <td style="width: 50%; vertical-align: top; text-align: center;">
-            <h3>부서별 직원 분포</h3>
-            <img src="{{ url_for('hr_stats.chart_employees_by_department') }}" alt="부서별 직원 수 차트" style="max-width: 100%;">
+        <td style="width: 50%; vertical-align: top;">
+            <fieldset><legend><strong>부서별 직원 분포 (재직중)</strong></legend>
+                <img src="{{ url_for('hr_stats.chart_employees_by_department') }}" alt="부서별 직원 수" style="max-width: 100%;">
+            </fieldset>
         </td>
-        <td style="width: 50%; vertical-align: top; text-align: center;">
-            <h3>재직자 근속 연수 분포</h3>
-            <img src="{{ url_for('hr_stats.chart_years_of_service') }}" alt="근속 연수 분포 차트" style="max-width: 100%;">
+        <td style="width: 50%; vertical-align: top;">
+            <fieldset><legend><strong>직급별 직원 분포 (재직중)</strong></legend>
+                <img src="{{ url_for('hr_stats.chart_employees_by_position') }}" alt="직급별 직원 수" style="max-width: 100%;">
+            </fieldset>
         </td>
     </tr>
     <tr>
-        <td colspan="2" style="text-align: center;">
-            <hr style="margin-top: 20px; margin-bottom: 20px;">
-            <h3>월별 입사자 수 현황</h3>
-            <img src="{{ url_for('hr_stats.chart_monthly_turnover') }}" alt="월별 입사자 수 차트" style="max-width: 100%;">
+        <td style="width: 50%; vertical-align: top;">
+            <fieldset><legend><strong>직책/직무별 직원 분포 (재직중)</strong></legend><img src="{{ url_for('hr_stats.chart_employees_by_job_title') }}" alt="직책별 직원 수" style="max-width: 100%;"></fieldset>
+        </td>
+    <tr>
+        <td style="width: 50%; vertical-align: top;">
+            <fieldset><legend><strong>재직자 근속 연수 분포</strong></legend>
+                <img src="{{ url_for('hr_stats.chart_years_of_service') }}" alt="재직자 근속 연수" style="max-width: 100%;">
+            </fieldset>
+        </td>
+        <td style="width: 50%; vertical-align: top;">
+            <fieldset><legend><strong>퇴사자 근속 연수 분포</strong></legend>
+                <img src="{{ url_for('hr_stats.chart_resigned_years_of_service') }}" alt="퇴사자 근속 연수" style="max-width: 100%;">
+            </fieldset>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="vertical-align: top;">
+            <fieldset><legend><strong>월별 입/퇴사 현황 (최근 12개월)</strong></legend>
+                <table style="width:100%">
+                    <tr>
+                        <td style="width:50%"><img src="{{ url_for('hr_stats.chart_monthly_hires') }}" alt="월별 입사자 수" style="max-width: 100%;"></td>
+                        <td style="width:50%"><img src="{{ url_for('hr_stats.chart_monthly_resignations') }}" alt="월별 퇴사자 수" style="max-width: 100%;"></td>
+                    </tr>
+                </table>
+            </fieldset>
         </td>
     </tr>
 </table>
-
 {% endblock %}

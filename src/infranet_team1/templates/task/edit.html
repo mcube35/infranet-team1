@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>업무 수정</title>
-</head>
-<body>
-    <h2>업무 수정</h2>
+{% extends "base.html" %}
+{% block title %}업무 수정{% endblock %}
+
+{% block content %}
+    <h1>업무 수정</h1>
 
     <form method="POST" enctype="multipart/form-data" action="{{ url_for('task.edit_get', task_id=task._id) }}">
         제목: <input type="text" name="title" value="{{ task.title }}" required><br>
@@ -31,5 +28,4 @@
 
         <button type="submit">수정 완료</button>
     </form>
-</body>
-</html>
+{% endblock %}

@@ -1,159 +1,162 @@
 from flask import Blueprint, render_template, redirect, request, url_for, jsonify
-from db import mongo_db 
+from flask_login import current_user
+from db import mongo_db
 from datetime import datetime
 from bson.objectid import ObjectId
 
-# http://127.0.0.1:5000/issue
 issue_bp = Blueprint("issue", __name__)
 
 # --- 전역 상수/매핑 정의 ---
+STATUS_MAP = {1: "신규", 2: "진행중", 3: "해결됨"}
 
-# 상태 ID와 이름 매핑 (1:신규, 2:진행중, 3:해결됨)
-STATUS_MAP = {
-    1: "신규",
-    2: "진행중",
-    3: "해결됨" 
-}
+# --- 컬렉션 헬퍼 함수 ---
+def get_issues(): return mongo_db["issues"]
+def get_clients(): return mongo_db["clients"]
+def get_users(): return mongo_db["users"]
 
-# 컬렉션 반환 헬퍼 함수
-# 유효한 family_name인지 이 함수에서 확인합니다.
-def get_issue_collection(family_name):
-    if family_name == "backend":
-        return mongo_db["backend_issues"]
-    elif family_name == "frontend":
-        return mongo_db["frontend_issues"]
-    elif family_name == "ui":
-        return mongo_db["ui_issues"]
-    else:
-        raise ValueError(f"Invalid issue family: {family_name}")
-
-def get_clients_collection():
-    return mongo_db["clients"] 
-
-# 임시 보고자 ID (실제 애플리케이션에서는 로그인된 사용자 ID를 사용해야 합니다.)
+# 임시 보고자 ID (로그인 기능이 없을 때의 기본값)
 DUMMY_REPORTER_ID = ObjectId("60c72b2f9b1d8e001c8c4a03")
 
-# --- 이슈 메인 페이지 (index.html 렌더링) ---
+# --- 헬퍼 함수 ---
+def is_valid_family(family_name):
+    """주어진 family_name이 유효한지 검사합니다."""
+    return family_name in ["backend", "frontend", "ui"]
+
+def _to_str_or_default(value, default="없음"):
+    """ObjectId나 None 값을 문자열로 변환하고 기본값을 제공합니다."""
+    return str(value) if value is not None else default
+
+def _format_datetime(dt, default="날짜없음"):
+    """datetime 객체를 특정 형식의 문자열로 변환하고 기본값을 제공합니다."""
+    return dt.strftime("%Y-%m-%d %H:%M") if dt else default
+
+def _get_reporter_name(reporter_id_obj):
+    """작성자 ObjectId로 사용자 이름을 조회합니다."""
+    if reporter_id_obj:
+        try:
+            if not isinstance(reporter_id_obj, ObjectId):
+                reporter_id_obj = ObjectId(str(reporter_id_obj))
+            
+            user_doc = mongo_db.hr.find_one({"_id": reporter_id_obj}, {"name": 1})
+            
+            return user_doc.get("name", "알 수 없는 사용자") if user_doc else "알 수 없는 사용자"
+        except Exception as e:
+            return "알 수 없는 사용자"
+    return "알 수 없는 사용자"
+
+
+# --- 이슈 메인 페이지 라우트 ---
 @issue_bp.route("/")
 def home():
-    # 화면에 표시될 "가족" 이름과 MongoDB 컬렉션 접두사 매핑
-    # 이 딕셔너리를 템플릿으로도 전달하여, 올바른 URL 파라미터를 생성하는 데 사용합니다.
-    family_categories = {
-        "Back family": "backend",      
-        "Front family": "frontend",    
-        "Publisher family": "ui" 
-    }
-    
-    # 화면에 표시될 "상태" 이름과 DB에 저장된 실제 'status' 필드 값을 매핑합니다.
-    display_statuses_map = {
-        "신규 이슈": STATUS_MAP[1],      
-        "진행중인 이슈": STATUS_MAP[2],   
-        "퇴마된 이슈": STATUS_MAP[3]      
-    }
+    family_map = {"Back family": "backend", "Front family": "frontend", "Publisher family": "ui"}
+    status_map = {"신규 이슈": STATUS_MAP[1], "진행중인 이슈": STATUS_MAP[2], "퇴마된 이슈": STATUS_MAP[3]}
 
-    issues_by_family_and_status = {}
+    users_map = {str(u["_id"]): u.get("name", "알 수 없는 사용자") 
+                 for u in mongo_db.hr.find({}, {"name": 1})}
 
-    for display_family_name, db_family_prefix in family_categories.items():
-        issues_by_family_and_status[display_family_name] = {}
-        current_collection = get_issue_collection(db_family_prefix) 
-
-        for display_status_name, db_status_value in display_statuses_map.items():
-            issues_cursor = current_collection.find(
-                {
-                    "status": db_status_value         
-                }
-            ).sort("created_at", -1).limit(3) 
-
-            issue_list = []
-            for issue in issues_cursor:
-                issue_list.append({
-                    "title": issue.get("title", "제목없음"),
-                    "mongo_id": str(issue.get("_id")),
-                    "family_name": db_family_prefix # 이 이슈가 속한 family_name (backend, frontend, ui)
-                })
-            issues_by_family_and_status[display_family_name][display_status_name] = issue_list
-
-    # issues_by_family_and_status와 함께 family_categories도 템플릿에 전달합니다.
-    return render_template("issue/index.html", 
-                           issues_by_family_and_status=issues_by_family_and_status,
-                           family_categories=family_categories)
+    result = {}
+    for fname, fval in family_map.items():
+        result[fname] = {}
+        for sname, sval in status_map.items():
+            issues = get_issues().find({"project_family": fval, "status": sval}).sort("created_at", -1).limit(3)
+            result[fname][sname] = [{
+                "title": i.get("title", "제목없음"),
+                "mongo_id": _to_str_or_default(i.get("_id")),
+                "family_name": fval,
+                "reporter_name": users_map.get(_to_str_or_default(i.get("reported_by"), None), "알 수 없는 사용자")
+            } for i in issues]
+    return render_template("issue/index.html", issues_by_family_and_status=result, family_categories=family_map)
 
 
-# --- 이슈 리스트 화면 (동적으로 컬렉션 선택) ---
-@issue_bp.route("/list/<family_name>", methods=["GET"])
+# --- 이슈 리스트 화면 라우트 ---
+@issue_bp.route("/list/<family_name>")
 def show_list(family_name):
-    try:
-        current_collection = get_issue_collection(family_name)
-    except ValueError as e:
-        return str(e), 400 
+    if not is_valid_family(family_name): return "Invalid family", 400
 
-    issues_cursor = current_collection.find().sort("created_at", -1)
+    main_issue_collection = get_issues()
+    
+    total_issues_count = main_issue_collection.count_documents({"project_family": family_name})
+
+    issues_cursor = main_issue_collection.find(
+        {"project_family": family_name}
+    ).sort("created_at", -1)
+
+    users_map = {str(u["_id"]): u.get("name", "알 수 없는 사용자") 
+                 for u in mongo_db.hr.find({}, {"name": 1})}
+
     posts = []
-    for i, issue in enumerate(issues_cursor, start=1):
-        posts.append({
-            "display_id": i, 
-            "mongo_id": str(issue.get("_id")), 
-            "title": issue.get("title", "제목없음"),
-            "description": issue.get("description", "내용없음"), 
-            "category": issue.get("category", "일반"), 
-            "status": issue.get("status", "상태없음"), 
-            "reported_by_id": str(issue.get("reported_by")) if issue.get("reported_by") else "없음", 
-            "client_company_id": str(issue.get("client_company_id")) if issue.get("client_company_id") else "없음", 
-            "client_company_name": issue.get("client_company_name", "고객사없음"), 
-            "assigned_to_id": str(issue.get("assigned_to")) if issue.get("assigned_to") else "없음", 
-            "created_at": issue.get("created_at").strftime("%Y-%m-%d %H:%M") if issue.get("created_at") else "날짜없음",
-            "updated_at": issue.get("updated_at").strftime("%Y-%m-%d %H:%M") if issue.get("updated_at") else "날짜없음"
-        })
-    return render_template("issue/backend_list.html", posts=posts, current_family=family_name)
+    for idx, issue in enumerate(issues_cursor):
+        display_id_reversed = total_issues_count - idx 
 
-# --- 이슈 작성 폼 및 처리 (동적으로 컬렉션 선택) ---
+        posts.append({
+            "display_id": display_id_reversed, 
+            "mongo_id": _to_str_or_default(issue.get("_id")),
+            "title": issue.get("title", "제목없음"),
+            "description": issue.get("description", "내용없음"),
+            "category": issue.get("category", "일반"),
+            "status": issue.get("status", "상태없음"),
+            "reporter_name": users_map.get(_to_str_or_default(issue.get("reported_by"), None), "알 수 없는 사용자"),
+            "client_company_id": _to_str_or_default(issue.get("client_company_id")),
+            "client_company_name": issue.get("client_company_name", "고객사없음"),
+            "assigned_to_id": _to_str_or_default(issue.get("assigned_to")),
+            "created_at": _format_datetime(issue.get("created_at")),
+            "updated_at": _format_datetime(issue.get("updated_at"))
+        })
+    return render_template("issue/list.html", posts=posts, current_family=family_name)
+
+
+# --- 이슈 작성 폼 및 처리 라우트 ---
 @issue_bp.route("/write/<family_name>", methods=["GET", "POST"])
 def write(family_name):
-    try:
-        current_collection = get_issue_collection(family_name)
-    except ValueError as e:
-        return str(e), 400
+    if not is_valid_family(family_name): return "Invalid family", 400
 
-    DUMMY_CLIENT_COMPANY_ID_OBJ = ObjectId("60c72b2f9b1d8e001c8c4a04") 
-    DUMMY_CLIENT_COMPANY_NAME = "ABC 주식회사" 
+    main_issue_collection = get_issues() 
 
     if request.method == "POST":
         title = request.form.get("title")
-        description = request.form.get("description") 
-        status_id_str = request.form.get("status_id") 
-        selected_client_company_id_str = request.form.get("client_company_id") 
+        description = request.form.get("description")
+        status_id = int(request.form.get("status_id")) # '신규'는 1로 고정될 것임
+        selected_client_company_id_str = request.form.get("client_company_id")
+        
+        final_reporter_id = DUMMY_REPORTER_ID # 기본값은 더미 ID
 
-        status_id = int(status_id_str)
+        if current_user.is_authenticated: # 사용자가 로그인되어 있다면
+            try:
+                final_reporter_id = ObjectId(current_user.get_id()) 
+            except Exception as e:
+                print(f"Error converting current_user.id ({current_user.get_id()}) to ObjectId: {e}")
+                final_reporter_id = DUMMY_REPORTER_ID 
+        else:
+            print(f"No user logged in. Using DUMMY_REPORTER_ID: {final_reporter_id}")
+
         status_name = STATUS_MAP.get(status_id, "알 수 없음") 
 
-        client_company_name = None 
-        client_company_obj_id = None
+        client_name, client_obj_id = None, None
         if selected_client_company_id_str:
             try:
-                client_company_obj_id = ObjectId(selected_client_company_id_str)
-                client_doc = get_clients_collection().find_one({"_id": client_company_obj_id})
+                client_obj_id = ObjectId(selected_client_company_id_str)
+                client_doc = get_clients().find_one({"_id": client_obj_id})
                 if client_doc:
-                    client_company_name = client_doc.get("name", "알 수 없음")
-            except Exception as e:
-                print(f"고객사 ID 변환 또는 조회 오류: {e}")
+                    client_name = client_doc.get("company_name", "알 수 없음")
+            except:
                 return "유효하지 않은 고객사 ID입니다.", 400
 
         issue_data = {
             "title": title,
             "description": description,
-            "category": "일반",
-            "reported_by": DUMMY_REPORTER_ID,
-            "assigned_to": None,
+            "category": "일반", 
+            "reported_by": final_reporter_id, # 로그인된 사용자 ID 또는 더미 ID 사용
+            "assigned_to": None, 
             "status_id": status_id, 
             "status": status_name,   
-            "client_company_id": client_company_obj_id, 
-            "client_company_name": client_company_name, 
-            "project_family": family_name, # 현재 URL의 family_name을 project_family로 저장
+            "client_company_id": client_obj_id, 
+            "client_company_name": client_name, 
+            "project_family": family_name, 
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
         }
         
-        current_collection.insert_one(issue_data) 
+        main_issue_collection.insert_one(issue_data) 
         
         return redirect(url_for("issue.show_list", family_name=family_name)) 
     
@@ -164,69 +167,154 @@ def write(family_name):
             current_family=family_name 
         )
 
-# --- 이슈 상세보기 (동적으로 컬렉션 선택) ---
+# --- 이슈 상세보기 라우트 ---
 @issue_bp.route("/detail/<family_name>/<issue_id>")
 def detail(family_name, issue_id):
+    if not is_valid_family(family_name): return "Invalid family", 400
+    
     try:
-        current_collection = get_issue_collection(family_name)
-    except ValueError as e:
-        return str(e), 400
+        issue = get_issues().find_one({"_id": ObjectId(issue_id), "project_family": family_name})
+        if not issue: return "이슈를 찾을 수 없습니다.", 404
 
-    try:
-        issue = current_collection.find_one({"_id": ObjectId(issue_id)})
-        if issue:
-            issue['reported_by_str'] = str(issue['reported_by']) if 'reported_by' in issue and issue['reported_by'] else '없음'
-            issue['assigned_to_str'] = str(issue['assigned_to']) if 'assigned_to' in issue and issue['assigned_to'] else '없음'
-            issue['client_company_id_str'] = str(issue['client_company_id']) if 'client_company_id' in issue and issue['client_company_id'] else '없음'
-            issue['created_at_str'] = issue['created_at'].strftime("%Y-%m-%d %H:%M") if 'created_at' in issue else '날짜없음'
-            issue['updated_at_str'] = issue['updated_at'].strftime("%Y-%m-%d %H:%M") if 'updated_at' in issue else '날짜없음'
-            issue['client_company_name_display'] = issue.get('client_company_name', '고객사없음') 
-
-            return render_template("issue/detail.html", issue=issue, current_family=family_name)
-        else:
-            return "이슈를 찾을 수 없습니다.", 404
+        issue.update({
+            "mongo_id": _to_str_or_default(issue.get("_id")),
+            "reporter_name_display": _get_reporter_name(issue.get("reported_by")), 
+            "assigned_to_str": _to_str_or_default(issue.get("assigned_to")),
+            "client_company_id_str": _to_str_or_default(issue.get("client_company_id")),
+            "created_at_str": _format_datetime(issue.get("created_at")),
+            "updated_at_str": _format_datetime(issue.get("updated_at")),
+            "client_company_name_display": issue.get("client_company_name", "고객사없음")
+        })
+        return render_template("issue/detail.html", issue=issue, current_family=family_name)
     except Exception as e:
         return f"유효하지 않은 이슈 ID입니다: {e}", 400
 
-# --- 이슈 상태 업데이트 라우트 (동적으로 컬렉션 선택) ---
+
+# --- 이슈 수정 폼 및 처리 라우트 ---
+# URL: /issue/edit/<family_name>/<issue_id>
+# 이 라우트가 존재해야 합니다!
+@issue_bp.route("/edit/<family_name>/<issue_id>", methods=["GET", "POST"])
+def edit(family_name, issue_id):
+    if not is_valid_family(family_name): return "Invalid family", 400
+
+    main_issue_collection = get_issues()
+
+    if request.method == "GET":
+        try:
+            issue = main_issue_collection.find_one({"_id": ObjectId(issue_id), "project_family": family_name})
+            if not issue:
+                return "수정할 이슈를 찾을 수 없습니다.", 404
+
+            issue['mongo_id'] = _to_str_or_default(issue.get("_id"))
+            issue['client_company_id_str'] = _to_str_or_default(issue.get("client_company_id"))
+
+            issue['client_company_name_for_input'] = issue.get("client_company_name", "")
+
+            status_options = []
+            for id, name in STATUS_MAP.items():
+                status_options.append({"id": id, "name": name, "selected": (name == issue.get("status"))})
+            
+            return render_template("issue/update.html", # 'update.html'로 변경
+                                   issue=issue, 
+                                   current_family=family_name,
+                                   status_options=status_options)
+        except Exception as e:
+            return f"이슈 로드 오류: {e}", 400
+
+    elif request.method == "POST":
+        title = request.form.get("title")
+        description = request.form.get("description")
+        status_name = request.form.get("status") 
+        selected_client_company_id_str = request.form.get("client_company_id")
+
+        client_name_to_save, client_obj_id = None, None
+        if selected_client_company_id_str:
+            try:
+                client_obj_id = ObjectId(selected_client_company_id_str)
+                client_doc = get_clients().find_one({"_id": client_obj_id})
+                if client_doc:
+                    client_name_to_save = client_doc.get("company_name", "알 수 없음")
+            except:
+                return "유효하지 않은 고객사 ID입니다.", 400
+
+        update_data = {
+            "$set": {
+                "title": title,
+                "description": description,
+                "status": status_name, 
+                "client_company_id": client_obj_id,
+                "client_company_name": client_name_to_save,
+                "updated_at": datetime.now()
+            }
+        }
+
+        try:
+            result = main_issue_collection.update_one(
+                {"_id": ObjectId(issue_id), "project_family": family_name},
+                update_data
+            )
+            if result.matched_count == 0:
+                print(f"No issue matched for update (edit POST): _id={issue_id}, project_family={family_name}")
+                return "수정할 이슈를 찾을 수 없습니다.", 404
+
+            return redirect(url_for("issue.detail", family_name=family_name, issue_id=issue_id))
+        except Exception as e:
+            return f"이슈 업데이트 오류: {e}", 500
+
+
+# --- 이슈 삭제 라우트 ---
+# URL: /issue/delete/<family_name>/<issue_id>
+@issue_bp.route("/delete/<family_name>/<issue_id>", methods=["POST"])
+def delete(family_name, issue_id):
+    if not is_valid_family(family_name): return "Invalid family", 400
+
+    main_issue_collection = get_issues()
+
+    try:
+        obj_issue_id = ObjectId(issue_id)
+        
+        result = main_issue_collection.delete_one(
+            {"_id": obj_issue_id, "project_family": family_name}
+        )
+        
+        if result.deleted_count == 0:
+            print(f"No issue found for deletion: _id={issue_id}, project_family={family_name}")
+            return "삭제할 이슈를 찾을 수 없습니다.", 404
+        
+        return redirect(url_for("issue.show_list", family_name=family_name))
+
+    except Exception as e:
+        print(f"Error during deletion: {e}")
+        return f"이슈 삭제 오류: {e}", 500
+
+
+# --- 이슈 상태 업데이트 라우트 (기존 상세페이지용 - 이제 edit/update에서 처리하므로 중복 고려) ---
+# 이 라우트는 이제 edit 페이지와 기능이 겹치므로, 필요 없다면 제거를 고려할 수 있습니다.
 @issue_bp.route("/update_status/<family_name>/<issue_id>", methods=["POST"])
 def update_status(family_name, issue_id):
-    try:
-        current_collection = get_issue_collection(family_name)
-    except ValueError as e:
-        return str(e), 400
-
+    if not is_valid_family(family_name): return "Invalid family", 400
     new_status = request.form.get("new_status")
-    if not new_status:
-        return "새로운 상태가 필요합니다.", 400
+    if not new_status: return "새로운 상태가 필요합니다.", 400
 
     try:
-        current_collection.update_one(
-            {"_id": ObjectId(issue_id)},
+        obj_issue_id = ObjectId(issue_id)
+        result = get_issues().update_one(
+            {"_id": obj_issue_id, "project_family": family_name},
             {"$set": {"status": new_status, "updated_at": datetime.now()}}
         )
+        if result.matched_count == 0:
+            print(f"No issue matched for update: _id={issue_id}, project_family={family_name}") 
+
         return redirect(url_for("issue.detail", family_name=family_name, issue_id=issue_id))
     except Exception as e:
         return f"상태 업데이트 오류: {e}", 500
 
+
 # --- 고객사 검색 API 엔드포인트 ---
 @issue_bp.route("/search_client", methods=["POST"])
 def search_client():
-    search_term = request.json.get("search_term", "").strip()
-    
-    if not search_term:
-        return jsonify([])
+    term = request.json.get("search_term", "").strip()
+    if not term: return jsonify([])
 
-    clients_cursor = get_clients_collection().find({
-        "$or": [
-            {"name": {"$regex": search_term, "$options": "i"}},
-        ]
-    }).limit(10)
-
-    results = []
-    for client in clients_cursor:
-        results.append({
-            "id": str(client["_id"]), 
-            "name": client["name"]
-        })
-    return jsonify(results)
+    results = get_clients().find({"company_name": {"$regex": term, "$options": "i"}}).limit(10)
+    return jsonify([{"id": _to_str_or_default(c.get("_id")), "name": c.get("company_name", "이름없음")} for c in results])

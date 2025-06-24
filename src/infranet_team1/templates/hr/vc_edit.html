@@ -4,7 +4,8 @@
 
 {% block content %}
 <h1>✏️ 휴가 신청 수정</h1>
-<form method="POST">
+
+<form method="POST" action="{{ url_for('vacation.edit_vacation', vacation_id=vacation._id) }}">
     <label>휴가 종류:</label>
     <select name="vacation_type" required>
         <option value="연차" {% if vacation.vacation_type == "연차" %}selected{% endif %}>연차</option>
@@ -21,18 +22,17 @@
     <label>사유:</label><br>
     <textarea name="reason" rows="4" cols="50" required>{{ vacation.reason }}</textarea><br><br>
 
-    <button type="submit">💾 저장하기</button>
+    <!-- 버튼 그룹: 저장하기와 목록으로 가기 버튼을 함께 배치합니다. -->
+    <div style="margin-top: 15px;">
+        
+        {# 1. 저장하기 버튼: form의 데이터를 POST 방식으로 제출합니다. #}
+        <button type="submit">💾 저장하기</button>
 
-    <!-- 삭제 버튼 (링크 방식으로 GET 요청, confirm 창 포함) -->
-    <a href="{{ url_for('vacation.delete_vacation', vacation_id=vacation._id) }}"
-    onclick="return confirm('정말 이 휴가 신청을 삭제하시겠습니까?');">
-        <button type="button">🗑 삭제하기</button>
-    </a>
+        {# 2. 목록으로 버튼: a 태그로 감싸 단순 페이지 이동만 수행합니다. #}
+        <a href="{{ url_for('vacation.show_list') }}">
+            <button type="button">📄 목록으로</button>
+        </a>
 
-    <!-- 목록으로 돌아가기 -->
-    <a href="{{ url_for('vacation.show_list') }}">
-        <button type="button">📄 목록으로</button>
-    </a>
+    </div>
 </form>
 {% endblock %}
-

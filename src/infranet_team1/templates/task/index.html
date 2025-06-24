@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>업무 조회</title>
-</head>
-<body>
-    <h2>전체/팀별 업무 현황</h2>
+{% extends "base.html" %}
+{% block title %}업무 조회{% endblock %}
+
+{% block content %}
+    <h1>전체/팀별 업무 현황</h1>
     
     <a href="{{ url_for('task.stat') }}">📈 업무 통계 보기</a>
 
@@ -73,5 +70,4 @@
             {% endfor %}
         </tbody>
     </table>
-</body>
-</html>
+{% endblock %}

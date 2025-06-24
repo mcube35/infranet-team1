@@ -5,15 +5,22 @@
 {% block content %}
 <div class="container" style="display: flex;">
     <!-- 왼쪽 사이드바: 카테고리 -->
-    <aside class="sidebar">
+    <aside class="sidebar" style="width: 200px; padding: 10px; border-right: 1px solid #ddd;">
         <h3>카테고리</h3>
-        <ul class="category-list">
-            <li><a href="{{ url_for('write.home') }}">전체보기</a></li>
-            <li><a href="{{ url_for('write.free_board') }}">자유게시판</a></li>
-            <li><a href="{{ url_for('write.qna_board') }}">질문과 답변</a></li>
-            <li><a href="{{ url_for('write.notice_board') }}">공지사항</a></li>
-        </ul>
+        <select id="categorySelect" style="width: 100%; padding: 5px;">
+            <option value="{{ url_for('write.home') }}" {% if not request.args.get('category') %}selected{% endif %}>전체보기</option>
+            <option value="{{ url_for('write.home', category='free') }}" {% if request.args.get('category') == 'free' %}selected{% endif %}>자유게시판</option>
+            <option value="{{ url_for('write.home', category='qna') }}" {% if request.args.get('category') == 'qna' %}selected{% endif %}>질문과 답변</option>
+            <option value="{{ url_for('write.home', category='notice') }}" {% if request.args.get('category') == 'notice' %}selected{% endif %}>공지사항</option>
+        </select>
     </aside>
+
+<script>
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        const url = this.value;
+        window.location.href = url;
+    });
+</script>
 
     <!-- 오른쪽 메인 콘텐츠 -->
     <main class="content" style="flex: 1; padding: 10px;">
