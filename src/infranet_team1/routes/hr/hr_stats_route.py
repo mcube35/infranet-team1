@@ -1,9 +1,7 @@
 import io
 from flask import Blueprint, render_template, send_file
 from db import mongo_db
-from datetime import date, datetime
-import matplotlib
-matplotlib.use('Agg')
+from datetime import date
 import matplotlib.pyplot as plt
 
 hr_stats_bp = Blueprint("hr_stats", __name__, url_prefix="/hr/stats")
