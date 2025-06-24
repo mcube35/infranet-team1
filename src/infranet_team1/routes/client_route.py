@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 import io
+import logging
+import mimetypes
 from flask import Blueprint, redirect, render_template, request, url_for, flash, send_file, jsonify
 from bson.objectid import ObjectId
+from bson.errors import InvalidId
 from extension import get_fs
 from db import mongo_db
-
 
 client_bp = Blueprint("client", __name__)
 fs = get_fs()
@@ -16,34 +18,22 @@ def get_clients_collection():
 def parse_date(date_str):
     try:
         return datetime.strptime(date_str, "%Y-%m-%d")
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as e:
+        logging.warning(f"날짜 파싱 실패: {date_str} -> {e}")
         return None
 
-def save_contract_files(files):
-    """여러 계약서 파일 저장 후 메타정보 반환"""
-    contract_files = []
+def save_files(files):
+    """여러 파일 저장 후 메타정보 반환"""
+    saved = []
     for file in files:
         if file and file.filename:
             file_id = fs.put(file, filename=file.filename, content_type=file.content_type)
-            contract_files.append({
+            saved.append({
                 "file_id": file_id,
                 "file_name": file.filename,
                 "uploaded_at": datetime.now(timezone.utc)
             })
-    return contract_files
-
-def save_attachments(files):
-    """여러 첨부파일 저장 후 메타정보 반환"""
-    attachments = []
-    for file in files:
-        if file and file.filename:
-            file_id = fs.put(file, filename=file.filename, content_type=file.content_type)
-            attachments.append({
-                "file_id": file_id,
-                "file_name": file.filename,
-                "uploaded_at": datetime.now(timezone.utc)
-            })
-    return attachments
+    return saved
 
 # ========== ✅ 고객사 등록 ==========
 @client_bp.route("/create", methods=["GET"])
@@ -53,7 +43,7 @@ def create_form():
 @client_bp.route("/create", methods=["POST"])
 def create():
     form = request.form
-    contract_files = save_contract_files(request.files.getlist("contract_files"))
+    contract_files = save_files(request.files.getlist("contract_files"))
 
     client_doc = {
         "company_name": form.get("company_name", "").strip(),
@@ -69,7 +59,7 @@ def create():
             "end_date": parse_date(form.get("contract_end_date"))
         },
         "contract_files": contract_files,
-        "attachments": save_attachments(request.files.getlist("attachments"))
+        "attachments": save_files(request.files.getlist("attachments"))
     }
 
     get_clients_collection().insert_one(client_doc)
@@ -83,11 +73,12 @@ def show_list():
     query = {
         "$or": [
             {"company_name": {"$regex": search, "$options": "i"}},
-            {"department": {"$regex": search, "$options": "i"}}
+            {"department": {"$regex": search, "$options": "i"}},
+            {"contact_person": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}}
         ]
     } if search else {}
 
-    # pipeline을 이용한 정렬 (Active 먼저)
     pipeline = [
         {"$match": query},
         {"$addFields": {
@@ -104,7 +95,10 @@ def show_list():
 # ========== ✅ 고객사 상세 ==========
 @client_bp.route("/<id>", methods=["GET"])
 def detail(id):
-    doc = get_clients_collection().find_one({"_id": ObjectId(id)})
+    try:
+        doc = get_clients_collection().find_one({"_id": ObjectId(id)})
+    except InvalidId:
+        return "유효하지 않은 ID입니다.", 400
     if not doc:
         return "해당 고객을 찾을 수 없습니다.", 404
     return render_template("client/detail.html", client_doc=doc)
@@ -113,19 +107,24 @@ def detail(id):
 @client_bp.route("/<id>/edit", methods=["GET"])
 def edit_form(id):
     collection = get_clients_collection()
-    client_doc = collection.find_one({"_id": ObjectId(id)})
+    try:
+        client_doc = collection.find_one({"_id": ObjectId(id)})
+    except InvalidId:
+        return "유효하지 않은 ID입니다.", 400
     if not client_doc:
         return "해당 고객을 찾을 수 없습니다.", 404
     return render_template("client/edit.html", client_doc=client_doc)
 
-
 @client_bp.route("/<id>/edit", methods=["POST"])
 def edit(id):
     collection = get_clients_collection()
-    client_doc = collection.find_one({"_id": ObjectId(id)})
+    try:
+        client_doc = collection.find_one({"_id": ObjectId(id)})
+    except InvalidId:
+        return "유효하지 않은 ID입니다.", 400
     if not client_doc:
         return "해당 고객을 찾을 수 없습니다.", 404
-    
+
     form = request.form
     updated_doc = {
         "company_name": form.get("company_name", "").strip(),
@@ -142,24 +141,16 @@ def edit(id):
         }
     }
 
-    # 계약서 삭제
     delete_contract_ids = request.form.getlist("delete_contract_file_ids")
     contract_files = client_doc.get("contract_files", [])
     contract_files = [f for f in contract_files if str(f["file_id"]) not in delete_contract_ids]
-
-    # 새 계약서 추가
-    new_contract_files = save_contract_files(request.files.getlist("contract_files"))
-    contract_files += new_contract_files
+    contract_files += save_files(request.files.getlist("contract_files"))
     updated_doc["contract_files"] = contract_files
 
-    # 첨부파일 삭제
     delete_ids = request.form.getlist("delete_file_ids")
     attachments = client_doc.get("attachments", [])
     attachments = [f for f in attachments if str(f["file_id"]) not in delete_ids]
-
-    # 첨부파일 추가
-    new_files = request.files.getlist("attachments")
-    attachments += save_attachments(new_files)
+    attachments += save_files(request.files.getlist("attachments"))
     updated_doc["attachments"] = attachments
 
     collection.update_one({"_id": ObjectId(id)}, {"$set": updated_doc})
@@ -170,23 +161,24 @@ def edit(id):
 @client_bp.route("/<id>/delete", methods=["POST"])
 def delete(id):
     collection = get_clients_collection()
-    client_doc = collection.find_one({"_id": ObjectId(id)})
+    try:
+        client_doc = collection.find_one({"_id": ObjectId(id)})
+    except InvalidId:
+        return "유효하지 않은 ID입니다.", 400
     if not client_doc:
         return "해당 고객을 찾을 수 없습니다.", 404
 
-    # 계약서 파일 제거
     for f in client_doc.get("contract_files", []):
         try:
             fs.delete(ObjectId(f["file_id"]))
-        except:
-            pass
+        except Exception as e:
+            logging.warning(f"계약서 파일 삭제 실패: {f['file_id']} -> {e}")
 
-    # 첨부파일 제거
     for f in client_doc.get("attachments", []):
         try:
             fs.delete(ObjectId(f["file_id"]))
-        except:
-            pass
+        except Exception as e:
+            logging.warning(f"첨부파일 삭제 실패: {f['file_id']} -> {e}")
 
     collection.delete_one({"_id": ObjectId(id)})
     flash("고객사가 삭제되었습니다.", "info")
@@ -197,11 +189,13 @@ def delete(id):
 def file_preview(file_id):
     try:
         file_obj = fs.get(ObjectId(file_id))
+        mimetype = file_obj.content_type or mimetypes.guess_type(file_obj.filename)[0] or "application/octet-stream"
         return send_file(
             io.BytesIO(file_obj.read()),
-            mimetype=file_obj.content_type or "application/pdf",
+            mimetype=mimetype,
             download_name=file_obj.filename or "preview",
             as_attachment=False
         )
-    except Exception:
+    except Exception as e:
+        logging.warning(f"파일 미리보기 실패: {file_id} -> {e}")
         return jsonify({"error": "파일을 찾을 수 없습니다."}), 404
