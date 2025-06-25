@@ -61,7 +61,25 @@
     </fieldset>
     
     {# 계정 정보#}
-    <fieldset style="margin-bottom: 20px;"><legend><strong>계정 정보</strong></legend><div style="padding: 15px;"><label for="password">비밀번호: {% if employee %}(변경 시에만 입력){% endif %}</label><br><input type="password" id="password" name="password" {% if not employee %}required{% endif %}><br><br><label for="role">권한:</label><br><select id="role" name="role"><option value="user" {% if employee and employee.role == 'user' %}selected{% endif %}>일반 사용자</option><option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>관리자</option><option value="system" {% if employee and employee.role == 'system' %}selected{% endif %}>시스템</option></select><br><br></div></fieldset>
-    <div style="text-align: center; margin-top: 30px;"><button type="submit">{% if employee %}💾 수정하기{% else %}➕ 등록하기{% endif %}</button><a href="{{ url_for('emp_admin.employee_list') }}"><button type="button">📄 목록으로</button></a></div>
-</form>
+    <fieldset style="margin-bottom: 20px;">
+    <legend><strong>계정 정보</strong></legend>
+    <div style="padding: 15px;">
+        <label for="password">비밀번호: {% if employee %}(변경 시에만 입력){% endif %}</label><br>
+        <input type="password" id="password" name="password" {% if not employee %}required{% endif %}><br><br>
+
+        <label for="role">권한:</label><br>
+        <select id="role" name="role">
+        <option value="user" {% if employee and employee.role == 'user' %}selected{% endif %}>일반 사용자</option>
+        <option value="admin" {% if employee and employee.role == 'admin' %}selected{% endif %}>관리자</option>
+        <option value="system" {% if employee and employee.role == 'system' %}selected{% endif %}>시스템</option>
+        </select><br><br>
+    </div>
+    </fieldset>
+
+    <div style="text-align: center; margin-top: 30px;">
+    <button type="submit">{% if employee %}💾 수정하기{% else %}➕ 등록하기{% endif %}</button>
+    <a href="{{ url_for('emp_admin.employee_list') }}"><button type="button">📄 목록으로</button></a>
+    </div>
+</form>     
+
 {% endblock %}
