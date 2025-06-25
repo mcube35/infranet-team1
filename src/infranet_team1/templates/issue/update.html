@@ -1,17 +1,14 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>게시글 수정 - {{ issue.title }}</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}게시글 수정 - {{ issue.title }}{% endblock %}
+
+{% block content %}
 
     <div class="container">
         <h1>게시글 수정 ({{ current_family | capitalize }} 이슈)</h1>
 
         {# 폼 action을 수정 라우트로 설정하고 method는 POST #}
-        <form id="postForm" method="POST" action="{{ url_for('issue.edit', family_name=current_family, issue_id=issue.mongo_id) }}">
+        <form id="postForm" method="POST" action="{{ url_for('issue.edit_post', family_name=current_family, issue_id=issue.mongo_id) }}">
             {# issue.mongo_id를 숨겨진 필드로 전달하여 혹시 모를 경우를 대비 #}
             <input type="hidden" name="issue_id" value="{{ issue.mongo_id }}">
 
@@ -148,5 +145,4 @@
         });
         clientSuggestions.addEventListener('mousedown', e => e.preventDefault());
     </script>
-</body>
-</html>
+{% endblock %}

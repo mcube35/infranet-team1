@@ -10,15 +10,16 @@
     
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block head %}
+    {% endblock %}
 </head>
 <body>
 
 <div class="main-sheet">
     
-    <!-- 1. 앱 헤더 -->
     <header class="app-header">
         
-        <!-- 왼쪽: 로고 -->
         <div class="header-section header-left">
             <a href="/" class="logo">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12L4 4L12 4L12 12L4 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12L12 20H20V12H12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12L12 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -26,7 +27,6 @@
             </a>
         </div>
 
-        <!-- 가운데: 메인 내비게이션 -->
         <nav class="header-section header-center">
             
             <div class="menu-item">
@@ -41,7 +41,7 @@
                 <a href="#">이슈 관리</a>
                 <div class="dropdown-menu">
                     <a href="{{ url_for('issue.home') }}">이슈 조회 및 관리</a>
-                    <a href="#">이슈 통계</a>
+                    <a href="{{ url_for('issue.stats') }}">이슈 통계</a>
                 </div>
             </div>
 
@@ -75,7 +75,6 @@
             </div>
         </nav>
 
-        <!-- 오른쪽: 사용자 정보 및 액션 -->
         <div class="header-section header-right">
             {% if current_user.is_authenticated %}
                 <div class="user-box">
@@ -97,7 +96,6 @@
         </div>
     </header>
 
-    <!-- 2. 메인 콘텐츠가 삽입될 영역 -->
     <main class="content-body">
         {% block content %}{% endblock %}
     </main>
