@@ -73,20 +73,41 @@ def employee_edit_submit(employee_id):
         "annual_leave_days": int(request.form.get("annual_leave_days", 15)), "updated_at": datetime.now()
     }
     fs = get_fs()
-    if 'profile_image' in request.files:
-        file = request.files['profile_image']
-        if file and file.filename != '':
-            if employee.get('profile_image_id'):
-                try: fs.delete(ObjectId(employee['profile_image_id']))
-                except Exception as e: print(f"기존 파일 삭제 실패: {e}")
-            filename = secure_filename(file.filename); file_id = fs.put(file, filename=filename, content_type=file.content_type)
-            update_data['profile_image_id'] = file_id
+
+    # --- 프로필 이미지 처리 로직 (수정) ---
+    remove_image_flag = request.form.get('remove_profile_image')
+    new_image_file = request.files.get('profile_image')
+
+    # 1. 새 이미지가 업로드된 경우
+    if new_image_file and new_image_file.filename != '':
+        # 기존 이미지가 있으면 삭제
+        if employee.get('profile_image_id'):
+            try: fs.delete(ObjectId(employee['profile_image_id']))
+            except Exception as e: print(f"기존 파일 삭제 실패: {e}")
+        # 새 이미지 저장
+        filename = secure_filename(new_image_file.filename)
+        file_id = fs.put(new_image_file, filename=filename, content_type=new_image_file.content_type)
+        update_data['profile_image_id'] = file_id
+    
+    # 2. '기본 이미지로 재설정'이 체크된 경우 (단, 새 이미지가 업로드되지 않았을 때)
+    elif remove_image_flag:
+        # 기존 이미지가 있으면 삭제
+        if employee.get('profile_image_id'):
+            try: fs.delete(ObjectId(employee['profile_image_id']))
+            except Exception as e: print(f"기존 파일 삭제 실패: {e}")
+        # DB에서 이미지 ID 필드를 null로 설정
+        update_data['profile_image_id'] = None
+    # --- 프로필 이미지 처리 로직 끝 ---
+
     if request.form.get("password"):
         password_plain = request.form["password"].encode("utf-8")
         update_data["password"] = bcrypt.hashpw(password_plain, bcrypt.gensalt())
+    
     get_hr_collection().update_one({"_id": ObjectId(employee_id)}, {"$set": update_data})
+    
     flash("✅ 직원 정보가 성공적으로 수정되었습니다.")
     return redirect(url_for("emp_admin.employee_list"))
+
 
 # 신규 등록 폼 (GET) - 부서/직위 목록 전달
 @emp_admin_bp.route("/new", methods=["GET"])

@@ -107,10 +107,8 @@
     {% if messages %}
         <script>
         {% for message in messages %}
-            // | tojson 필터를 사용하여 JavaScript 문자열로 안전하게 변환
-            var message = {{ message | tojson }};
-            if (!message.startsWith('saved_')) {
-                alert(message);
+            if (!"{{ message }}".startsWith('saved_')) {
+            alert("{{ message }}");
             }
         {% endfor %}
         </script>

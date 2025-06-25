@@ -2,7 +2,8 @@ import io
 from flask import Blueprint, render_template, send_file
 from db import mongo_db
 from datetime import date
-import matplotlib.pyplot as plt
+# 변경: figure를 대문자 Figure로 수정
+from matplotlib.figure import Figure
 
 hr_stats_bp = Blueprint("hr_stats", __name__, url_prefix="/hr/stats")
 
@@ -33,25 +34,31 @@ def get_mongo_counts(group_field, *, match=None, date_format=None, limit=None, c
         pipeline.append({'$limit': limit})
     data = list(mongo_db.hr.aggregate(pipeline))
     if date_format:
-        data.sort(key=lambda d: d['_id'])  # 오름차순 정렬
+        data.sort(key=lambda d: d['_id'])
     return data
 
 def plot_chart(labels, values, *, chart_type='bar', title='', color='skyblue', ylabel='직원 수'):
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig = Figure(figsize=(12, 6))
+    ax = fig.subplots()
+
     if chart_type == 'bar':
         ax.bar(labels, values, color=color)
     elif chart_type == 'line':
         ax.plot(labels, values, marker='o', linestyle='-', color=color)
-        plt.grid(True, linestyle='--', linewidth=0.5)
+        ax.grid(True, linestyle='--', linewidth=0.5)
+
     ax.set_title(title)
     ax.set_ylabel(ylabel)
-    plt.xticks(rotation=45, ha='right')
+    
+    ax.tick_params(axis='x', rotation=45)
+
     if values:
-        ax.set_yticks(range(0, max(values) + 2))
+        if values:
+            ax.set_yticks(range(0, max(values) + 2))
+
     img = io.BytesIO()
     fig.savefig(img, format='png', bbox_inches='tight')
     img.seek(0)
-    plt.close(fig)
     return send_file(img, mimetype='image/png')
 
 def generate_chart(group_field, *, match=None, date_format=None, limit=None,
@@ -63,8 +70,6 @@ def generate_chart(group_field, *, match=None, date_format=None, limit=None,
     values = [d[count_key] for d in data]
     return plot_chart(labels, values, chart_type=chart_type, title=title, color=color)
 
-
-# --- 라우트 정의 ---
 
 @hr_stats_bp.route("/charts/employees_by_department.png")
 def chart_employees_by_department():
@@ -132,11 +137,17 @@ def chart_years_of_service():
         else: service_dist['10년 이상'] += 1
     final_labels = [k for k, v in service_dist.items() if v > 0]; final_values = [v for v in service_dist.values() if v > 0]
     if not final_values: return send_file(io.BytesIO(), mimetype='image/png')
-    fig, ax = plt.subplots(figsize=(8, 8)); ax.pie(final_values, labels=final_labels, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors); ax.axis('equal'); ax.set_title('재직자 근속 연수 분포')
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
+
+    fig = Figure(figsize=(8, 8))
+    ax = fig.subplots()
+    
+    colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
+    ax.pie(final_values, labels=final_labels, autopct='%1.1f%%', startangle=90, colors=colors[:len(final_values)])
+    ax.axis('equal')
+    ax.set_title('재직자 근속 연수 분포')
+    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0)
     return send_file(img, mimetype='image/png')
 
-# 퇴사자 근속 연수 차트
 @hr_stats_bp.route("/charts/resigned_yos.png")
 def chart_resigned_years_of_service():
     employees = list(mongo_db.hr.find({"status": "퇴사", "hire_date": {"$ne": None}, "updated_at": {"$ne": None}}))
@@ -151,11 +162,17 @@ def chart_resigned_years_of_service():
         else: service_dist['10년 이상'] += 1
     final_labels = [k for k, v in service_dist.items() if v > 0]; final_values = [v for v in service_dist.values() if v > 0]
     if not final_values: return send_file(io.BytesIO(), mimetype='image/png')
-    fig, ax = plt.subplots(figsize=(10, 6)); ax.bar(final_labels, final_values, color='salmon'); ax.set_ylabel('퇴사자 수'); ax.set_title('퇴사자 근속 연수 분포')
+    
+    fig = Figure(figsize=(10, 6))
+    ax = fig.subplots()
+    
+    ax.bar(final_labels, final_values, color='salmon')
+    ax.set_ylabel('퇴사자 수')
+    ax.set_title('퇴사자 근속 연수 분포')
     
     if final_values:
         max_y = max(final_values)
         ax.set_yticks(range(0, max_y + 2))
 
-    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0); plt.close(fig)
+    img = io.BytesIO(); fig.savefig(img, format='png', bbox_inches='tight'); img.seek(0)
     return send_file(img, mimetype='image/png')
