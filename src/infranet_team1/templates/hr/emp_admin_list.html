@@ -28,8 +28,11 @@
             <tr>
                 <td style="text-align: center;">{{ total_records - ((current_page - 1) * page_size) - loop.index0 }}</td>
                 <td style="text-align: center;">
-                    {% if employee.profile_image_id %}<img src="{{ url_for('file_download', file_id=employee.profile_image_id) }}" alt="." width="30" height="30" style="border-radius: 50%; vertical-align: middle; margin-right: 8px;">
-                    {% else %}<span style="display: inline-block; width: 30px; height: 30px; background-color: #eee; border-radius: 50%; vertical-align: middle; margin-right: 8px;"></span>{% endif %}
+                    {% if employee.profile_image_id %}
+                        <img src="{{ url_for('file_download', file_id=employee.profile_image_id) }}" alt="프로필" width="30" height="30" style="border-radius: 50%; vertical-align: middle; margin-right: 8px; object-fit: cover;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='img/user_icon.png') }}" alt="기본 프로필" width="30" height="30" style="border-radius: 50%; vertical-align: middle; margin-right: 8px; object-fit: cover;">
+                    {% endif %}
                     {{ employee.name }}
                 </td>
                 <td>{{ employee.department }}</td>

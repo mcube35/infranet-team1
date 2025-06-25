@@ -10,12 +10,11 @@ vacation_bp = Blueprint("vacation", __name__, url_prefix="/hr/vacation")
 def get_vacation_collection():
     return mongo_db["vacation"]
 
-# 휴가 신청목록 화면 (연차 계산 로직 수정)
+# 휴가 신청 목록 화면: 사용자의 휴가 내역과 남은 연차 계산 후 출력
 @vacation_bp.route("/list", methods=["GET"])
 def show_list():
     page_size = 10
-    try: page = int(request.args.get('page', 1))
-    except (TypeError, ValueError): page = 1
+    page = request.args.get('page', 1, type=int)
     skip_count = (page - 1) * page_size
 
     query = {"user_id": ObjectId(current_user.id)}
@@ -23,40 +22,40 @@ def show_list():
     total_pages = math.ceil(total_vacations / page_size)
     vacations = list(get_vacation_collection().find(query).sort("created_at", -1).skip(skip_count).limit(page_size))
 
-    # --- 남은 연차 계산 로직 (전체 수정) ---
-    
-    # 해결 1: DB에서 직접 사용자 정보를 가져와 총 연차일수 설정 
+    # 사용자 정보에서 총 연차일수 조회
     user = mongo_db.hr.find_one({"_id": ObjectId(current_user.id)})
     total_leave_days = user.get("annual_leave_days", 0) if user else 0
 
-    # 3. 사용한 연차 일수를 계산합니다.
+    # 사용한 연차 일수 계산 (승인된 연차 및 반차만)
     used_leave_days = 0
-    
-    # 해결 2: '반차'는 0.5일로, '연차'는 기간으로 계산하도록 파이프라인 수정
     pipeline = [
         {
             "$match": {
                 "user_id": ObjectId(current_user.id),
                 "status": "승인",
-                "vacation_type": {"$in": ["연차", "반차"]} # 연차와 반차 모두 포함
+                "vacation_type": {"$in": ["연차", "반차"]}
             }
         },
         {
-            "$project": {
+            "$addFields": {
+                "start": {"$dateFromString": {"dateString": "$start_date"}},
+                "end": {"$dateFromString": {"dateString": "$end_date"}}
+            }
+        },
+        {
+            "$addFields": {
                 "days_used": {
-                    # $cond: if (vacation_type == "반차") then 0.5 else (날짜 계산)
                     "$cond": {
                         "if": {"$eq": ["$vacation_type", "반차"]},
                         "then": 0.5,
                         "else": {
                             "$add": [
-                                {"$divide": [
-                                    {"$subtract": [
-                                        {"$dateFromString": {"dateString": "$end_date"}},
-                                        {"$dateFromString": {"dateString": "$start_date"}}
-                                    ]},
-                                    1000 * 60 * 60 * 24
-                                ]},
+                                {
+                                    "$divide": [
+                                        {"$subtract": ["$end", "$start"]},
+                                        1000 * 60 * 60 * 24
+                                    ]
+                                },
                                 1
                             ]
                         }
@@ -73,12 +72,12 @@ def show_list():
     ]
 
     result = list(get_vacation_collection().aggregate(pipeline))
+
     if result:
         used_leave_days = result[0]['total_used']
 
-    # 4. 남은 연차를 계산합니다.
+    # 남은 연차 계산
     remaining_days = total_leave_days - used_leave_days
-    # 남은 연차 계산 로직 끝
 
     return render_template("hr/vc_list.html", 
                         vacations=vacations, 
@@ -89,10 +88,12 @@ def show_list():
                         total_vacations=total_vacations,
                         page_size=page_size)
 
+# 휴가 신청 폼 출력
 @vacation_bp.route("/apply", methods=["GET"])
 def apply_form():
     return render_template("hr/vc_apply.html")
 
+# 휴가 신청 처리: 입력 데이터 검증 후 DB에 신규 휴가 신청 저장
 @vacation_bp.route("/apply", methods=["POST"])
 def apply_vacation():
     vacation_type = request.form["vacation_type"]; start_date = request.form["start_date"]
@@ -109,6 +110,7 @@ def apply_vacation():
     flash("휴가 신청이 완료되었습니다.", "success")
     return redirect(url_for("vacation.show_list"))
 
+# 휴가 신청 수정 폼 출력: 본인 신청이며 상태가 '대기'인 경우만 접근 가능
 @vacation_bp.route("/edit/<vacation_id>", methods=["GET"])
 def edit_form(vacation_id):
     vacation = get_vacation_collection().find_one({"_id": ObjectId(vacation_id), "user_id": ObjectId(current_user.id)})
@@ -117,6 +119,7 @@ def edit_form(vacation_id):
         return redirect(url_for("vacation.show_list"))
     return render_template("hr/vc_edit.html", vacation=vacation)
 
+# 휴가 신청 수정 처리: 입력 검증 후 상태가 '대기'인 문서 업데이트
 @vacation_bp.route("/edit/<vacation_id>", methods=["POST"])
 def edit_vacation(vacation_id):
     vacation_type = request.form["vacation_type"]; start_date = request.form["start_date"]
@@ -136,6 +139,7 @@ def edit_vacation(vacation_id):
     flash("휴가 신청이 수정되었습니다.", "success")
     return redirect(url_for("vacation.show_list"))
 
+# 휴가 신청 삭제 처리: 본인 신청이며 상태가 '대기'인 경우만 삭제 가능
 @vacation_bp.route("/delete/<vacation_id>", methods=["POST"])
 def delete_vacation(vacation_id):
     result = get_vacation_collection().delete_one({

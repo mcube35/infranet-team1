@@ -1,39 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}휴가 관리 (관리자){% endblock %}
+{% block title %}
+휴가 관리 (관리자)
+{% endblock %}
 
 {% block content %}
 <h1>🛠️ 휴가 관리 대시보드</h1>
 
-<fieldset style="margin-bottom: 20px;"><legend><strong>조회 조건</strong></legend><form method="GET" action="{{ url_for('vacation_admin.admin_list') }}"><label for="status">상태:</label><select name="status" id="status" onchange="this.form.submit()"><option value="대기" {% if status_filter == '대기' %}selected{% endif %}>⏳ 대기</option><option value="승인" {% if status_filter == '승인' %}selected{% endif %}>✅ 승인</option><option value="거절" {% if status_filter == '거절' %}selected{% endif %}>❌ 거절</option><option value="전체" {% if status_filter == '전체' %}selected{% endif %}>전체</option></select></form></fieldset>
+<fieldset style="margin-bottom: 20px;">
+    <legend><strong>조회 조건</strong></legend>
+    <form method="GET" action="{{ url_for('vacation_admin.admin_list') }}">
+        <label for="status">상태:</label>
+        <select name="status" id="status" onchange="this.form.submit()">
+            <option value="대기" {% if status_filter == '대기' %}selected{% endif %}>⏳ 대기</option>
+            <option value="승인" {% if status_filter == '승인' %}selected{% endif %}>✅ 승인</option>
+            <option value="거절" {% if status_filter == '거절' %}selected{% endif %}>❌ 거절</option>
+            <option value="전체" {% if status_filter == '전체' %}selected{% endif %}>전체</option>
+        </select>
+    </form>
+</fieldset>
 
 <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse: collapse;">
     <thead>
         <tr style="background-color: #f2f2f2;">
-            <th>No.</th><th>신청자</th><th>휴가 종류</th><th>기간</th><th>신청 사유</th>
-            <th>신청일</th><th>상태</th><th>처리 사유 / 처리자</th><th>조치</th>
+            <th>No.</th>
+            <th>신청자</th>
+            <th>휴가 종류</th>
+            <th>기간</th>
+            <th>신청 사유</th>
+            <th>신청일</th>
+            <th>상태</th>
+            <th>처리 사유 / 처리자</th>
+            <th>조치</th>
         </tr>
     </thead>
     <tbody>
         {% if vacations %}
             {% for vacation in vacations %}
             <tr>
-                <td style="text-align: center;">{{ total_records - ((current_page - 1) * page_size) - loop.index0 }}</td>
-                <td style="text-align: center;">{% if vacation.user_info and vacation.user_info|length > 0 %}{{ vacation.user_info[0].name }}{% else %}(알 수 없음){% endif %}</td>
-                <td style="text-align: center;">{{ vacation.vacation_type }}</td>
-                <td style="text-align: center;">{{ vacation.start_date }} ~ {{ vacation.end_date }}</td>
-                <td>{{ vacation.reason }}</td>
-                <td style="text-align: center;">{{ vacation.created_at.strftime('%Y-%m-%d %H:%M') if vacation.created_at else '-' }}</td>
                 <td style="text-align: center;">
-                    {% if vacation.status == '승인' %}<strong style="color: green;">✅ 승인</strong>
-                    {% elif vacation.status == '대기' %}<strong style="color: orange;">⏳ 대기</strong>
-                    {% elif vacation.status == '거절' %}<strong style="color: red;">❌ 거절</strong>
+                    {{ total_records - ((current_page - 1) * page_size) - loop.index0 }}
+                </td>
+                <td style="text-align: center;">
+                    {% if vacation.user_info and vacation.user_info|length > 0 %}
+                        {{ vacation.user_info[0].name }}
+                    {% else %}
+                        (알 수 없음)
                     {% endif %}
                 </td>
                 <td style="text-align: center;">
-                    {% if vacation.status == '거절' and vacation.rejection_reason %}<span style="color: red;">{{ vacation.rejection_reason }}</span><br><small>({{ vacation.processed_by_name }})</small>
-                    {% elif vacation.status == '승인' %}- <br><small>({{ vacation.processed_by_name }})</small>
-                    {% else %}-{% endif %}
+                    {{ vacation.vacation_type }}
+                </td>
+                <td style="text-align: center;">
+                    {{ vacation.start_date }} ~ {{ vacation.end_date }}
+                </td>
+                <td>
+                    {{ vacation.reason }}
+                </td>
+                <td style="text-align: center;">
+                    {{ vacation.created_at.strftime('%Y-%m-%d %H:%M') if vacation.created_at else '-' }}
+                </td>
+                <td style="text-align: center;">
+                    {% if vacation.status == '승인' %}
+                        <strong style="color: green;">✅ 승인</strong>
+                    {% elif vacation.status == '대기' %}
+                        <strong style="color: orange;">⏳ 대기</strong>
+                    {% elif vacation.status == '거절' %}
+                        <strong style="color: red;">❌ 거절</strong>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if vacation.status == '거절' and vacation.rejection_reason %}
+                        <span style="color: red;">{{ vacation.rejection_reason }}</span><br>
+                        <small>({{ vacation.processed_by_name }})</small>
+                    {% elif vacation.status == '승인' %}
+                        - <br>
+                        <small>({{ vacation.processed_by_name }})</small>
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
                 <td style="text-align: center;">
                     {% if vacation.status == '대기' %}
@@ -44,12 +89,9 @@
                             <input type="hidden" name="rejection_reason" value="">
                             <button type="submit" title="거절" onclick="return handleReject(this.form);" style="background:none; border:none; cursor:pointer; font-size:1.2em;">👎</button>
                         </form>
-                    {# '승인' 또는 '거절' 상태일 때 '처리 취소' 버튼 표시 #}
                     {% elif vacation.status in ['승인', '거절'] %}
                         <form action="{{ url_for('vacation_admin.revert_vacation_status', vacation_id=vacation._id) }}" method="post" style="display: inline;">
-                            <button type="submit" title="처리 취소 (대기 상태로 변경)"
-                                    onclick="return confirm('이 휴가의 처리를 취소하고 \'대기\' 상태로 되돌리시겠습니까? \n(승인된 연차의 경우, 사용일수 계산이 자동으로 복구됩니다)');"
-                                    style="background:none; border:none; cursor:pointer; font-size:1.2em;">🔄</button>
+                            <button type="submit" title="처리 취소 (대기 상태로 변경)" onclick="return confirm('이 휴가의 처리를 취소하고 \'대기\' 상태로 되돌리시겠습니까? \n(승인된 연차의 경우, 사용일수 계산이 자동으로 복구됩니다)');" style="background:none; border:none; cursor:pointer; font-size:1.2em;">🔄</button>
                         </form>
                     {% else %}
                         -
@@ -58,12 +100,45 @@
             </tr>
             {% endfor %}
         {% else %}
-            <tr><td colspan="9" style="text-align: center; padding: 20px;">해당 상태의 휴가 신청이 없습니다.</td></tr>
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 20px;">
+                    해당 상태의 휴가 신청이 없습니다.
+                </td>
+            </tr>
         {% endif %}
     </tbody>
 </table>
 
-{# 페이지네이션 #}
-<div class="pagination" style="text-align: center; margin-top: 20px;">{% if total_pages > 0 %}{% if current_page > 1 %}<a href="{{ url_for('vacation_admin.admin_list', page=current_page - 1, status=status_filter) }}" style="text-decoration: none; padding: 5px;">« 이전</a>{% else %}<span style="color: grey; padding: 5px;">« 이전</span>{% endif %}{% for page_num in range(1, total_pages + 1) %}{% if page_num == current_page %}<strong style="padding: 5px; color: black;">{{ page_num }}</strong>{% else %}<a href="{{ url_for('vacation_admin.admin_list', page=page_num, status=status_filter) }}" style="text-decoration: none; padding: 5px;">{{ page_num }}</a>{% endif %}{% endfor %}{% if current_page < total_pages %}<a href="{{ url_for('vacation_admin.admin_list', page=current_page + 1, status=status_filter) }}" style="text-decoration: none; padding: 5px;">다음 »</a>{% else %}<span style="color: grey; padding: 5px;">다음 »</span>{% endif %}{% endif %}</div>
-<script>function handleReject(form) { const reason = prompt("휴가 신청을 거절하는 사유를 입력해주세요. (취소 시 비워두세요)"); if (reason === null) { return false; } form.rejection_reason.value = reason; return confirm("정말 이 휴가 신청을 거절하시겠습니까?"); }</script>
+<div class="pagination" style="text-align: center; margin-top: 20px;">
+    {% if total_pages > 0 %}
+        {% if current_page > 1 %}
+            <a href="{{ url_for('vacation_admin.admin_list', page=current_page - 1, status=status_filter) }}" style="text-decoration: none; padding: 5px;">« 이전</a>
+        {% else %}
+            <span style="color: grey; padding: 5px;">« 이전</span>
+        {% endif %}
+        {% for page_num in range(1, total_pages + 1) %}
+            {% if page_num == current_page %}
+                <strong style="padding: 5px; color: black;">{{ page_num }}</strong>
+            {% else %}
+                <a href="{{ url_for('vacation_admin.admin_list', page=page_num, status=status_filter) }}" style="text-decoration: none; padding: 5px;">{{ page_num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if current_page < total_pages %}
+            <a href="{{ url_for('vacation_admin.admin_list', page=current_page + 1, status=status_filter) }}" style="text-decoration: none; padding: 5px;">다음 »</a>
+        {% else %}
+            <span style="color: grey; padding: 5px;">다음 »</span>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+function handleReject(form) {
+    const reason = prompt("휴가 신청을 거절하는 사유를 입력해주세요. (취소 시 비워두세요)");
+    if (reason === null) {
+        return false;
+    }
+    form.rejection_reason.value = reason;
+    return confirm("정말 이 휴가 신청을 거절하시겠습니까?");
+}
+</script>
 {% endblock %}
