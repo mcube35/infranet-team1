@@ -18,6 +18,7 @@
 <table border="1">
   <thead>
     <tr>
+      <th>ID</th>
       <th>고객사명</th>
       <th>부서</th>
       <th>계약 상태</th>
@@ -29,6 +30,7 @@
   <tbody>
     {% for c in clients %}
     <tr>
+      <td>{{ c._id }}</td>
       <td>{{ c.company_name }}</td>
       <td>{{ c.department }}</td>
       <td>{{ c.contract.status }}</td>

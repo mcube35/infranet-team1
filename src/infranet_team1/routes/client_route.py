@@ -40,9 +40,28 @@ def save_files(files):
 def create_form():
     return render_template("client/create.html")
 
+from flask import request, redirect, url_for, flash, render_template
+from datetime import datetime
+
 @client_bp.route("/create", methods=["POST"])
 def create():
     form = request.form
+
+    # 계약 시작일과 종료일 필수값 검증
+    start_date_raw = form.get("contract_start_date", "").strip()
+    end_date_raw = form.get("contract_end_date", "").strip()
+
+    if not start_date_raw or not end_date_raw:
+        flash("계약 시작일과 종료일을 모두 입력해야 합니다.", "error")
+        return redirect(request.url)
+
+    try:
+        start_date = parse_date(start_date_raw)
+        end_date = parse_date(end_date_raw)
+    except ValueError:
+        flash("계약 날짜 형식이 올바르지 않습니다.", "error")
+        return redirect(request.url)
+
     contract_files = save_files(request.files.getlist("contract_files"))
 
     client_doc = {
@@ -55,8 +74,8 @@ def create():
         "notes": form.get("notes", "").strip(),
         "contract": {
             "status": form.get("contract_status"),
-            "start_date": parse_date(form.get("contract_start_date")),
-            "end_date": parse_date(form.get("contract_end_date"))
+            "start_date": start_date,
+            "end_date": end_date
         },
         "contract_files": contract_files,
         "attachments": save_files(request.files.getlist("attachments"))
@@ -65,6 +84,7 @@ def create():
     get_clients_collection().insert_one(client_doc)
     flash("고객사 등록이 완료되었습니다.", "success")
     return redirect(url_for("client.show_list"))
+
 
 # ========== ✅ 고객사 목록 ==========
 @client_bp.route("/list", methods=["GET"])

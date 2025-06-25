@@ -7,6 +7,10 @@
 
 <table border="1" cellpadding="8">
     <tr>
+        <th>고객사 ID</th>
+        <td>{{ client_doc._id }}</td>
+    </tr>
+    <tr>
         <th>사명</th>
         <td>{{ client_doc.company_name }}</td>
     </tr>
@@ -107,7 +111,7 @@
     <a href="{{ url_for('client.show_list') }}">[목록으로]</a> |
     <a href="{{ url_for('client.edit_form', id=client_doc._id) }}">[수정]</a> |
     <form method="post" action="{{ url_for('client.delete', id=client_doc._id) }}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
-        <button type="submit">[삭제]</button>
+        <button type="submit">삭제</button>
     </form>
 </p>
 {% endblock %}
