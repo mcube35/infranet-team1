@@ -2,18 +2,71 @@
 {% block title %}업무 통계{% endblock %}
 
 {% block content %}
-<h1>📊 마감일 기준 상태별 업무 통계</h1>
-<div>
-    <img src="{{ url_for('task.chart_image') }}" alt="마감일 기준 상태별 통계 차트">
+<div style="display: flex; justify-content: space-around;">
+  <div>
+    <h2>마감일 기준 상태별 업무 통계</h2>
+    <canvas id="dateChart" height="400"></canvas>
+  </div>
+  <div>
+    <h2>팀별 업무 상태 분포</h2>
+    <canvas id="teamChart" height="400"></canvas>
+  </div>
 </div>
 
-<hr>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  fetch("{{ url_for('task.chart_data') }}")
+    .then(res => res.json())
+    .then(data => {
+      const dates = Object.keys(data).sort()
+      const allStatuses = new Set()
+      dates.forEach(date => Object.keys(data[date]).forEach(s => allStatuses.add(s)))
+      const statuses = [...allStatuses]
+      const colors = ['#f1c40f', '#3498db', '#2ecc71', '#9b59b6', '#e67e22']
 
-<h1>📊 팀별 업무 상태 분포</h1>
-<div>
-    <img src="{{ url_for('task.chart_by_team') }}" alt="팀별 업무 상태 스택 차트">
-</div>
+      const datasets = statuses.map((status, i) => ({
+        label: status,
+        data: dates.map(date => data[date][status] || 0),
+        backgroundColor: colors[i % colors.length]
+      }))
 
-<br>
-<a href="{{ url_for('task.home') }}">← 업무 목록으로 돌아가기</a>
+      new Chart(document.getElementById('dateChart'), {
+        type: 'bar',
+        data: { labels: dates, datasets },
+        options: {
+          responsive: false,
+          plugins: { title: { display: true, text: '마감일 기준 상태별 업무 통계' } },
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+        }
+      })
+    })
+
+  fetch("{{ url_for('task.chart_by_team_api') }}")
+    .then(res => res.json())
+    .then(data => {
+      const teams = Object.keys(data)
+      const allStatuses = new Set()
+      teams.forEach(team => Object.keys(data[team]).forEach(s => allStatuses.add(s)))
+      const statuses = [...allStatuses]
+      const colors = ['#f1c40f', '#3498db', '#2ecc71', '#9b59b6', '#e67e22']
+
+      const datasets = statuses.map((status, i) => ({
+        label: status,
+        data: teams.map(team => data[team][status] || 0),
+        backgroundColor: colors[i % colors.length]
+      }))
+
+      new Chart(document.getElementById('teamChart'), {
+        type: 'bar',
+        data: { labels: teams, datasets },
+        options: {
+          responsive: false,
+          plugins: { title: { display: true, text: '팀별 업무 상태 분포' } },
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+        }
+      })
+    })
+})
+</script>
 {% endblock %}
