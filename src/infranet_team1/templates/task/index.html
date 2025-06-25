@@ -64,7 +64,7 @@
                 <td>{{ task.due_date }}</td>
                 <td>
                     {% if task.file_id %}
-                        <a href="{{ url_for('task.download_file', file_id=task.file_id) }}">다운로드</a>
+                        <a href="{{ url_for('file_download', file_id=task.file_id) }}">다운로드</a>
                     {% else %}
                         없음
                     {% endif %}

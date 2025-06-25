@@ -136,18 +136,6 @@ def delete(task_id):
     flash("업무가 삭제되었습니다.", "success")
     return redirect(url_for('task.home'))
 
-@task_bp.route('/file/<file_id>', methods=['GET'])
-def download_file(file_id):
-    try:
-        file_obj = fs.get(ObjectId(file_id))
-        return Response(
-            file_obj.read(),
-            mimetype='application/octet-stream',
-            headers={"Content-Disposition": f"attachment;filename={file_obj.filename}"}
-        )
-    except Exception:
-        return "파일을 찾을 수 없습니다.", 404
-
 # 통계 시각화 이미지
 @task_bp.route('/chart-image', methods=['GET'])
 def chart_image():
