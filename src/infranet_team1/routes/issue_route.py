@@ -43,7 +43,7 @@ def _get_reporter_name(reporter_id_obj):
 @issue_bp.route("/")
 def home():
     family_map = {"Back family": "backend", "Front family": "frontend", "Publisher family": "ui"}
-    ISSUE_STATUS = {"신규 이슈": ISSUE_STATUS[1], "진행중인 이슈": ISSUE_STATUS[2], "퇴마된 이슈": ISSUE_STATUS[3]}
+    status_map = {"신규 이슈": ISSUE_STATUS[1], "진행중인 이슈": ISSUE_STATUS[2], "퇴마된 이슈": ISSUE_STATUS[3]}
 
     users_map = {str(u["_id"]): u.get("name", "알 수 없는 사용자") 
                  for u in get_hr_collection().find({}, {"name": 1})}
@@ -51,7 +51,7 @@ def home():
     result = {}
     for fname, fval in family_map.items():
         result[fname] = {}
-        for sname, sval in ISSUE_STATUS.items():
+        for sname, sval in status_map.items():
             issues = get_issues().find({"project_family": fval, "status": sval}).sort("created_at", -1).limit(3)
             result[fname][sname] = [{
                 "title": i.get("title", "제목없음"),
