@@ -121,7 +121,19 @@ def edit_post(task_id):
 # 업무 삭제 처리 POST함수
 @task_bp.route('/delete/<task_id>', methods=['POST'])
 def delete(task_id):
+    task = get_tasks_collection().find_one({'_id': ObjectId(task_id)})
+
+    # 파일 삭제
+    file_id = task.get('file_id')
+    if file_id:
+        try:
+            fs.delete(ObjectId(file_id))
+        except:
+            pass  # 파일이 없거나 이미 삭제된 경우 무시
+
+    # 업무 삭제
     get_tasks_collection().delete_one({'_id': ObjectId(task_id)})
+    flash("업무가 삭제되었습니다.", "success")
     return redirect(url_for('task.home'))
 
 @task_bp.route('/file/<file_id>', methods=['GET'])
