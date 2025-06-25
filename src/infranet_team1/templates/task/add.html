@@ -1,4 +1,17 @@
 {% extends "base.html" %}
+<!-- Flash 메시지 표시 영역 -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div style="margin-bottom: 1em;">
+            {% for msg in messages %}
+                <div style="padding: 10px; border: 1px solid #ccc; background-color: #f8f9fa; color: #333; border-radius: 6px;">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
 {% block title %}업무 추가{% endblock %}
 
 {% block content %}
@@ -23,7 +36,7 @@
             <option value="보통">보통</option>
             <option value="높음">높음</option>
         </select><br>
-        마감일: <input type="date" name="due_date"><br>
+        마감일: <input type="date" name="due_date" required><br>
         첨부파일: <input type="file" name="file"><br>
 
         <button type="submit">등록</button>
