@@ -10,7 +10,7 @@
 {% block content %}
 <div class="container">
     <h1>{{ current_family | capitalize }} 이슈</h1> 
-    <a href="{{ url_for('issue.write', family_name=current_family) }}">글쓰기</a>
+    <a href="{{ url_for('issue.write_get', family_name=current_family) }}">글쓰기</a>
     
     <table class="board-table" border="1" cellspacing="0" cellpadding="5"> {# 기본 테이블 속성은 유지 #}
         <thead>
@@ -38,7 +38,7 @@
                     <td class="post-manage"> 
                         <div class="action-buttons"> {# 클래스는 유지하나 CSS가 없으므로 시각적 효과 없음 #}
                             {# 수정 링크 #}
-                            <a href="{{ url_for('issue.edit', family_name=current_family, issue_id=post.mongo_id) }}" class="edit-btn">수정</a>
+                            <a href="{{ url_for('issue.edit_get', family_name=current_family, issue_id=post.mongo_id) }}" class="edit-btn">수정</a>
                             
                             {# 삭제 폼 (POST 요청) - inline 스타일은 기능적 목적을 위해 유지 #}
                             <form action="{{ url_for('issue.delete', family_name=current_family, issue_id=post.mongo_id) }}" method="post" style="display:inline;" onsubmit="return confirm('이 게시글을 정말 삭제하시겠습니까?');">

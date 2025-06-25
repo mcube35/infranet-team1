@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}이슈 상태 통계{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    {# 이곳에 이전에 있던 <style> 태그와 CSS 내용은 완전히 제거되었습니다. #}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>이슈 상태별 현황</h1>
+
+    <div class="overall-total">
+        전체 총 이슈: {{ overall_total_issues }}개
+    </div>
+        
+        {# 여기에 차트들이 JavaScript에 의해 동적으로 생성될 것입니다. #}
+
+ <div id="charts-section" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 125px; margin-top: 100px; padding: 0;">    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Flask에서 넘겨받은 all_family_stats_json (JSON 문자열)을 JavaScript 객체로 파싱합니다.
+        const allFamilyStats = JSON.parse('{{ all_family_stats_json | safe }}'); 
+        const chartsSection = document.getElementById('charts-section'); // 차트들을 추가할 부모 요소
+
+        console.log("All Family Stats from Flask:", allFamilyStats);
+
+        // Chart.js에서 사용할 색상 배열
+        const backgroundColors = [
+            'rgba(255, 99, 132, 0.8)', // 신규 (Red)
+            'rgba(54, 162, 235, 0.8)', // 진행중 (Blue)
+            'rgba(75, 192, 192, 0.8)', // 해결됨 (Green)
+            'rgba(255, 206, 86, 0.8)', // 추가 상태 (Yellow)
+            'rgba(153, 102, 255, 0.8)' // 추가 상태 (Purple)
+        ];
+        const borderColors = [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(153, 102, 255, 1)'
+        ];
+
+        // 각 패밀리별로 차트를 생성하고 DOM에 추가합니다.
+        // Object.keys로 키를 가져와서 정렬하면 순서를 예측 가능하게 만듭니다.
+        const sortedFamilyNames = Object.keys(allFamilyStats).sort();
+
+        sortedFamilyNames.forEach(familyName => {
+            const familyStats = allFamilyStats[familyName];
+            const chartData = familyStats.chart_data;
+
+            // 1. 차트 컨테이너 요소 생성
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+
+            // 2. 차트 제목 생성
+            const chartTitle = document.createElement('div');
+            chartTitle.className = 'chart-title';
+            chartTitle.textContent = `${familyName.toUpperCase()} Family 이슈 현황`;
+            chartContainer.appendChild(chartTitle);
+
+            // 3. Canvas 요소 생성
+            const canvas = document.createElement('canvas');
+            canvas.id = `statusPieChart_${familyName}`; // 고유 ID 부여
+            chartContainer.appendChild(canvas);
+
+            // 4. 총 이슈 개수 표시 요소 생성
+            const totalCountDiv = document.createElement('div');
+            totalCountDiv.className = 'total-count';
+            totalCountDiv.textContent = `${familyName.toUpperCase()} Family 총 이슈: ${familyStats.total_issues}개`;
+            chartContainer.appendChild(totalCountDiv);
+
+            // 생성된 컨테이너를 부모 요소에 추가
+            chartsSection.appendChild(chartContainer);
+
+            // 차트 데이터가 있을 경우 차트 그리기
+            if (chartData && chartData.length > 0) {
+                const labels = chartData.map(data => data.label);
+                const dataValues = chartData.map(data => data.value);
+
+                const ctx = canvas.getContext('2d');
+
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataValues,
+                            backgroundColor: backgroundColors.slice(0, labels.length), // 데이터 개수에 맞춰 색상 사용
+                            borderColor: borderColors.slice(0, labels.length),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: false, //거지같은ㄱ놈
+                        plugins: {
+                            legend: {
+                                position: 'bottom', // 범례 위치
+                            },
+                            title: {
+                                display: false, // HTML에서 제목을 표시하므로 Chart.js의 제목은 숨김
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((sum, current) => sum + current, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                        return `${label}: ${value}개 (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                console.warn(`No chart data available for ${familyName}.`);
+                // 데이터가 없는 경우, 캔버스는 제거하고 메시지 표시
+                canvas.remove(); // 빈 캔버스 제거
+                totalCountDiv.textContent = `${familyName.toUpperCase()} Family 이슈: 데이터 없음`; // 텍스트 업데이트
+            }
+        });
+    });
+</script>
+{% endblock %}
