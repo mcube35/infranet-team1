@@ -1,4 +1,17 @@
 {% extends "base.html" %}
+<!-- Flash 메시지 표시 영역 -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div style="margin-bottom: 1em;">
+            {% for msg in messages %}
+                <div style="padding: 10px; border: 1px solid #ccc; background-color: #f8f9fa; color: #333; border-radius: 6px;">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
 {% block title %}업무 조회{% endblock %}
 
 {% block content %}
@@ -50,8 +63,8 @@
                 <td>{{ task.priority }}</td>
                 <td>{{ task.due_date }}</td>
                 <td>
-                    {% if task.file_url %}
-                        <a href="{{ task.file_url }}">다운로드</a>
+                    {% if task.file_id %}
+                        <a href="{{ url_for('task.download_file', file_id=task.file_id) }}">다운로드</a>
                     {% else %}
                         없음
                     {% endif %}
