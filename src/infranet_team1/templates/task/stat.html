@@ -16,57 +16,43 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
-  fetch("{{ url_for('task.chart_data') }}")
-    .then(res => res.json())
-    .then(data => {
-      const dates = Object.keys(data).sort()
-      const allStatuses = new Set()
-      dates.forEach(date => Object.keys(data[date]).forEach(s => allStatuses.add(s)))
-      const statuses = [...allStatuses]
-      const colors = ['#f1c40f', '#3498db', '#2ecc71', '#9b59b6', '#e67e22']
+  function createStackedBarChart({canvasId, apiUrl, chartTitle}) {
+    fetch(apiUrl)
+      .then(res => res.json())
+      .then(data => {
+        const labels = Object.keys(data);
+        const allStatuses = new Set();
+        labels.forEach(label => Object.keys(data[label]).forEach(s => allStatuses.add(s)));
+        const statuses = [...allStatuses];
 
-      const datasets = statuses.map((status, i) => ({
-        label: status,
-        data: dates.map(date => data[date][status] || 0),
-        backgroundColor: colors[i % colors.length]
-      }))
+        const datasets = statuses.map((status, i) => ({
+          label: status,
+          data: labels.map(label => data[label][status] || 0),
+        }));
 
-      new Chart(document.getElementById('dateChart'), {
-        type: 'bar',
-        data: { labels: dates, datasets },
-        options: {
-          responsive: false,
-          plugins: { title: { display: true, text: '마감일 기준 상태별 업무 통계' } },
-          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
-        }
-      })
-    })
+        new Chart(document.getElementById(canvasId), {
+          type: 'bar',
+          data: { labels, datasets },
+          options: {
+            responsive: false,
+            plugins: { title: { display: true, text: chartTitle } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+          }
+        });
+      });
+  }
 
-  fetch("{{ url_for('task.chart_by_team_api') }}")
-    .then(res => res.json())
-    .then(data => {
-      const teams = Object.keys(data)
-      const allStatuses = new Set()
-      teams.forEach(team => Object.keys(data[team]).forEach(s => allStatuses.add(s)))
-      const statuses = [...allStatuses]
-      const colors = ['#f1c40f', '#3498db', '#2ecc71', '#9b59b6', '#e67e22']
+  createStackedBarChart({
+    canvasId: 'dateChart',
+    apiUrl: "{{ url_for('task.chart_data') }}",
+    chartTitle: '마감일 기준 상태별 업무 통계'
+  });
 
-      const datasets = statuses.map((status, i) => ({
-        label: status,
-        data: teams.map(team => data[team][status] || 0),
-        backgroundColor: colors[i % colors.length]
-      }))
-
-      new Chart(document.getElementById('teamChart'), {
-        type: 'bar',
-        data: { labels: teams, datasets },
-        options: {
-          responsive: false,
-          plugins: { title: { display: true, text: '팀별 업무 상태 분포' } },
-          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
-        }
-      })
-    })
-})
+  createStackedBarChart({
+    canvasId: 'teamChart',
+    apiUrl: "{{ url_for('task.chart_by_team_api') }}",
+    chartTitle: '팀별 업무 상태 분포'
+  });
+});
 </script>
 {% endblock %}
