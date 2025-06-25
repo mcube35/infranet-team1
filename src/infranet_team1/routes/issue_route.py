@@ -7,7 +7,7 @@ from bson.objectid import ObjectId
 
 issue_bp = Blueprint("issue", __name__)
 
-STATUS_MAP = {1: "신규", 2: "진행중", 3: "해결됨"}
+ISSUE_STATUS = {1: "신규", 2: "진행중", 3: "해결됨"}
 
 def get_issues(): return mongo_db["issues"]
 def get_clients(): return mongo_db["clients"]
@@ -43,7 +43,7 @@ def _get_reporter_name(reporter_id_obj):
 @issue_bp.route("/")
 def home():
     family_map = {"Back family": "backend", "Front family": "frontend", "Publisher family": "ui"}
-    status_map = {"신규 이슈": STATUS_MAP[1], "진행중인 이슈": STATUS_MAP[2], "퇴마된 이슈": STATUS_MAP[3]}
+    ISSUE_STATUS = {"신규 이슈": ISSUE_STATUS[1], "진행중인 이슈": ISSUE_STATUS[2], "퇴마된 이슈": ISSUE_STATUS[3]}
 
     users_map = {str(u["_id"]): u.get("name", "알 수 없는 사용자") 
                  for u in get_hr_collection().find({}, {"name": 1})}
@@ -51,7 +51,7 @@ def home():
     result = {}
     for fname, fval in family_map.items():
         result[fname] = {}
-        for sname, sval in status_map.items():
+        for sname, sval in ISSUE_STATUS.items():
             issues = get_issues().find({"project_family": fval, "status": sval}).sort("created_at", -1).limit(3)
             result[fname][sname] = [{
                 "title": i.get("title", "제목없음"),
@@ -104,7 +104,7 @@ def write_get(family_name):
     
     return render_template(
         "issue/write.html",
-        category_name=STATUS_MAP.get(1), 
+        category_name=ISSUE_STATUS.get(1), 
         current_family=family_name 
     )
 
@@ -133,7 +133,7 @@ def write_post(family_name):
         print(f"No user logged in. Using None for reporter ID.")
 
     fixed_status_id = 1 
-    fixed_status_name = STATUS_MAP.get(fixed_status_id, "알 수 없음") 
+    fixed_status_name = ISSUE_STATUS.get(fixed_status_id, "알 수 없음") 
 
     client_name, client_obj_id = None, None
     if selected_client_company_id_str:
@@ -204,7 +204,7 @@ def edit_get(family_name, issue_id):
         issue['client_company_name_for_input'] = issue.get("client_company_name", "")
 
         status_options = []
-        for id, name in STATUS_MAP.items():
+        for id, name in ISSUE_STATUS.items():
             status_options.append({"id": id, "name": name, "selected": (name == issue.get("status"))})
         
         return render_template("issue/update.html",
@@ -316,8 +316,8 @@ def search_client():
     results = get_clients().find({"company_name": {"$regex": term, "$options": "i"}}).limit(10)
     return jsonify([{"id": _to_str_or_default(c.get("_id")), "name": c.get("company_name", "이름없음")} for c in results])
 
-@issue_bp.route("/statistics/status_overview")
-def get_status_statistics():
+@issue_bp.route("/stats")
+def stats():
     project_families = ["backend", "frontend", "ui"]
     
     all_family_stats = {}
@@ -336,7 +336,7 @@ def get_status_statistics():
             status_data[item['status']] = item['count']
                 
         chart_data_for_family = []
-        for status_id, status_name in STATUS_MAP.items():
+        for status_id, status_name in ISSUE_STATUS.items():
             count = status_data.get(status_name, 0)
             chart_data_for_family.append({
                 "label": status_name,
@@ -353,12 +353,12 @@ def get_status_statistics():
     overall_total_issues = get_issues().count_documents({})
             
     return render_template(
-        "issue/statistics_status_overview.html",
+        "issue/stats.html",
         all_family_stats_json=json.dumps(all_family_stats), 
         overall_total_issues=overall_total_issues 
     )
 
-@issue_bp.route("/api/statistics/status_overview")
+@issue_bp.route("/api/stats")
 def api_status_statistics():
     project_families = ["backend", "frontend", "ui"]
     all_family_stats = {}
@@ -377,7 +377,7 @@ def api_status_statistics():
             status_data[item['status']] = item['count']
                 
         chart_data_for_family = []
-        for status_id, status_name in STATUS_MAP.items():
+        for status_id, status_name in ISSUE_STATUS.items():
             count = status_data.get(status_name, 0)
             chart_data_for_family.append({
                 "label": status_name,
