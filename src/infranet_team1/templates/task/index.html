@@ -61,7 +61,7 @@
                 <td>{{ task.team }}</td>
                 <td>{{ task.status }}</td>
                 <td>{{ task.priority }}</td>
-                <td>{{ task.due_date }}</td>
+                <td>{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}</td>
                 <td>
                     {% if task.file_id %}
                         <a href="{{ url_for('file_download', file_id=task.file_id) }}">다운로드</a>
