@@ -14,8 +14,9 @@
 
         <div>
             <label for="clientSearchInput">고객사:</label>
-            <input type="text" id="clientSearchInput" placeholder="고객사 이름 또는 ID 검색 (필수)" autocomplete="off" />
-            {# 추가: 선택된 고객사의 ID를 서버로 넘기기 위한 숨겨진 필드 #}
+            {# 여기에 name 속성 추가: 선택된 고객사 이름이 폼 데이터로 전송됩니다. #}
+            <input type="text" id="clientSearchInput" name="client_company_name_for_display" placeholder="고객사 이름 또는 ID 검색 (필수)" autocomplete="off" /> 
+            {# 추가: 선택된 고객사의 ID를 서버로 넘기기 위한 숨겨진 필드 (이건 DB 처리를 위해 필요) #}
             <input type="hidden" id="hiddenClientCompanyId" name="client_company_id" /> 
             
             <span id="selectedClientNameDisplay" class="selected-client" style="margin-left: 10px; font-weight: bold; color: green;"></span>
@@ -42,7 +43,7 @@
 <script>
     const form = document.getElementById('postForm');
     const clientInput = document.getElementById('clientSearchInput');
-    const clientIdHidden = document.getElementById('hiddenClientCompanyId'); // 이제 이 요소가 HTML에 존재합니다!
+    const clientIdHidden = document.getElementById('hiddenClientCompanyId');
     const clientList = document.getElementById('clientSuggestions');
     const clientDisplay = document.getElementById('selectedClientNameDisplay');
     const postTitleInput = document.getElementById('postTitle');
@@ -103,8 +104,8 @@
                         li.style.borderBottom = '1px solid #eee';
 
                         li.onclick = () => {
-                            clientInput.value = client.name;
-                            clientIdHidden.value = client.id; // 숨겨진 필드에 ID 값 설정
+                            clientInput.value = client.name; // 보이는 입력 필드에 고객사 이름 설정
+                            clientIdHidden.value = client.id; // 숨겨진 필드에 고객사 ID 설정
                             clientDisplay.innerText = '';
                             clientList.style.display = 'none';
                             clientInput.setCustomValidity('');

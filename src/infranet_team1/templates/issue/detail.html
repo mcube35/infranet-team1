@@ -17,6 +17,10 @@
         </div>
         <div>
             <strong>고객사:</strong> {{ issue.client_company_name_display }}
+            {# 여기에 고객사 ID 마지막 4자리 추가 #}
+            {% if issue.client_company_id_str and issue.client_company_id_str|length >= 4 %}
+                <span style="font-size: 0.8em; color: #888;">({{ issue.client_company_id_str[-4:] }})</span>
+            {% endif %}
         </div>
         <div>
             <strong>작성자:</strong> {{ issue.reporter_name_display }}
