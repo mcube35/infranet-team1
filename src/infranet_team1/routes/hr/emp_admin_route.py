@@ -6,7 +6,7 @@ from datetime import datetime
 import bcrypt
 import math
 
-from extension import get_fs
+from extension import get_fs, is_allowed_image, to_safe_image
 from werkzeug.utils import secure_filename
 
 emp_admin_bp = Blueprint("emp_admin", __name__, url_prefix="/hr/emp")
@@ -107,7 +107,7 @@ def employee_edit_submit(employee_id):
         "hire_date": datetime.strptime(request.form["hire_date"], "%Y-%m-%d") if request.form.get("hire_date") else None,
         "status": request.form["status"],
         "role": request.form["role"],
-        "annual_leave_days": int(request.form.get("annual_leave_days", 15)),
+        "annual_leave_days": request.form.get("annual_leave_days", 15, type=int),
         "updated_at": datetime.now()
     }
     fs = get_fs()
@@ -116,13 +116,13 @@ def employee_edit_submit(employee_id):
     remove_image_flag = request.form.get('remove_profile_image')
     new_image_file = request.files.get('profile_image')
 
-    if new_image_file and new_image_file.filename != '':
+    if new_image_file and new_image_file.filename != '' and is_allowed_image(new_image_file):
         # 기존 이미지 삭제 시도
         if employee.get('profile_image_id'):
             try: fs.delete(ObjectId(employee['profile_image_id']))
             except Exception as e: print(f"기존 파일 삭제 실패: {e}")
         filename = secure_filename(new_image_file.filename)
-        file_id = fs.put(new_image_file, filename=filename, content_type=new_image_file.content_type)
+        file_id = fs.put(to_safe_image(new_image_file), filename=filename, content_type=new_image_file.content_type)
         update_data['profile_image_id'] = file_id
     elif remove_image_flag:
         if employee.get('profile_image_id'):
@@ -177,12 +177,13 @@ def employee_create():
         "created_at": datetime.now(),
         "updated_at": datetime.now(), "profile_image_id": None
     }
+
     if 'profile_image' in request.files:
         file = request.files['profile_image']
-        if file and file.filename != '':
+        if file and file.filename != '' and is_allowed_image(file):
             fs = get_fs()
             filename = secure_filename(file.filename)
-            file_id = fs.put(file, filename=filename, content_type=file.content_type)
+            file_id = fs.put(to_safe_image(file), filename=filename, content_type=file.content_type)
             employee_data['profile_image_id'] = file_id
     get_hr_collection().insert_one(employee_data)
     flash("✅ 새로운 직원이 등록되었습니다.")
