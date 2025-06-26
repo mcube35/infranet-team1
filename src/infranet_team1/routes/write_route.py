@@ -127,11 +127,18 @@ def detail(post_id):
         abort(404)
 
     author_ids = list(set({comment["author_id"] for comment in post.get("comments", [])}))
-
     authors = get_hr_collection().find({"_id": {"$in": author_ids}})
     author_map = {author["_id"]: author["name"] for author in authors}
+    
+    post_author = get_hr_collection().find_one({"_id": post["author_id"]})
+    user_name = post_author["name"] if post_author else "알 수 없음"
 
-    return render_template("write/detail.html", post=post, author_map=author_map)
+    return render_template(
+        "write/detail.html",
+        post=post, 
+        author_map=author_map,
+        user_name=user_name
+                        )
 
 
 # 댓글 작성 POST처리
