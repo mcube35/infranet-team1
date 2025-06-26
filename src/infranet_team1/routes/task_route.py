@@ -50,7 +50,7 @@ def home():
             pass
 
     task_list = get_tasks_collection().find(query).sort("due_date", -1)
-    return render_template('task/index.html', tasks=task_list)
+    return render_template('task/index.html', tasks=task_list, today=datetime.today().date())
 
 # 업무 추가 폼
 @task_bp.route('/add', methods=['GET'])
@@ -60,26 +60,28 @@ def add_get():
 # 업무 추가 처리 POST함수
 @task_bp.route('/add', methods=['POST'])
 def add_post():
-    due_date_str = request.form.get('due_date')
-    if not due_date_str:
-        flash("⚠ 마감일은 반드시 입력해야 합니다.")
-        return redirect(url_for('task.add_get'))
+    # 마감일 처리
+    if 'no_due_date' in request.form:
+        due_date = None
+    else:
+        due_date_str = request.form.get('due_date')
+        if not due_date_str:
+            flash("⚠ 마감일은 반드시 입력하거나 '미정'을 선택해야 합니다.", "danger")
+            return redirect(url_for('task.add_get'))
+        due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
 
     file = request.files.get('file')
-    file_id = None
-
-    if file and file.filename:
-        file_id = fs.put(file, filename=file.filename)
+    file_id = fs.put(file, filename=file.filename) if file and file.filename else None
 
     data = {
         'title': request.form['title'],
         'team': request.form['team'],
         'status': request.form['status'],
         'priority': request.form['priority'],
-        'due_date': datetime.strptime(due_date_str, '%Y-%m-%d'),
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'due_date': due_date,
         'file_id': file_id,
+        'created_at': datetime.now(),
+        'updated_at': datetime.now()
     }
 
     get_tasks_collection().insert_one(data)
@@ -90,29 +92,28 @@ def add_post():
 @task_bp.route('/edit/<task_id>', methods=['GET'])
 def edit_get(task_id):
     task = get_tasks_collection().find_one({'_id': ObjectId(task_id)})
-    return render_template('task/edit.html', task=task)
+    return render_template('task/edit.html', task=task, today=datetime.today().date())
 
 # 업무 수정 처리 POST함수
 @task_bp.route('/edit/<task_id>', methods=['POST'])
 def edit_post(task_id):
-    due_date_str = request.form.get('due_date')
-    if not due_date_str:
-        flash("⚠ 마감일은 반드시 입력해야 합니다.", "danger")
-        return redirect(url_for('task.edit_get', task_id=task_id))
-    
     update = {
         'title': request.form['title'],
         'team': request.form['team'],
         'status': request.form['status'],
         'priority': request.form['priority'],
-        'due_date': datetime.strptime(due_date_str, '%Y-%m-%d'),
         'updated_at': datetime.now()
     }
 
-    file = request.files.get('file')
-    if file and file.filename:
-        file_id = fs.put(file, filename=file.filename)
-        update['file_id'] = file_id
+    # 마감일 처리
+    if 'no_due_date' in request.form:
+        update['due_date'] = None
+    else:
+        due_date_str = request.form.get('due_date')
+        if not due_date_str:
+            flash("⚠ 마감일은 반드시 입력하거나 '미정'을 선택해야 합니다.", "danger")
+            return redirect(url_for('task.edit_get', task_id=task_id))
+        update['due_date'] = datetime.strptime(due_date_str, '%Y-%m-%d')
 
     get_tasks_collection().update_one({'_id': ObjectId(task_id)}, {'$set': update})
     flash("업무가 수정되었습니다.", "success")

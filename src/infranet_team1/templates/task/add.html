@@ -50,7 +50,27 @@
             <option value="높음">높음</option>
         </select><br>
 
-        마감일: <input type="date" name="due_date" required><br>
+        마감일:
+        <input type="date" id="due_date_input" name="due_date" required>
+        <label>
+            <input type="checkbox" id="no_due_date_checkbox" name="no_due_date"> 마감일 미정
+        </label>
+        <br>
+
+        <script>
+            const checkbox = document.getElementById('no_due_date_checkbox');
+            const dateInput = document.getElementById('due_date_input');
+
+            checkbox.addEventListener('change', function () {
+                dateInput.disabled = this.checked;
+                if (this.checked) {
+                    dateInput.removeAttribute('required');
+                    dateInput.value = '';
+                } else {
+                    dateInput.setAttribute('required', 'required');
+                }
+            });
+        </script>
 
         첨부파일: <input type="file" name="file"><br>
 

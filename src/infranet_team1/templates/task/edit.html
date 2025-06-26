@@ -40,12 +40,36 @@
             <option value="높음" {% if task.priority == "높음" %}selected{% endif %}>높음</option>
         </select><br>
 
-        마감일: <input
-                    type="date"
-                    name="due_date"
-                    value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}" required
-                    required
-                ><br>
+        마감일:
+        <input
+            type="date"
+            id="due_date_input"
+            name="due_date"
+            value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}"
+            {% if not task.due_date %}disabled{% endif %}
+        >
+        <label>
+            <input type="checkbox" id="no_due_date_checkbox" name="no_due_date"
+                {% if not task.due_date %}checked{% endif %}
+            > 마감일 미정
+        </label>
+        <br>
+
+        {% if task.due_date and task.due_date.date() < today %}
+            <span style="color:red;">(마감일이 지났습니다!)</span>
+        {% endif %}
+
+        <script>
+            const checkbox = document.getElementById('no_due_date_checkbox');
+            const dateInput = document.getElementById('due_date_input');
+
+            checkbox.addEventListener('change', function () {
+                dateInput.disabled = this.checked;
+                if (this.checked) {
+                    dateInput.value = '';
+                }
+            });
+        </script>
 
         첨부파일 변경: <input type="file" name="file"><br>
 
