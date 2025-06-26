@@ -1,5 +1,5 @@
 from io import BytesIO
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response, current_app, flash
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, send_from_directory, Response, current_app, flash
 from matplotlib.figure import Figure
 from db import mongo_db
 from bson import ObjectId
@@ -50,7 +50,7 @@ def home():
             pass
 
     task_list = get_tasks_collection().find(query).sort("due_date", -1)
-    return render_template('task/index.html', tasks=task_list)
+    return render_template('task/index.html', tasks=task_list, today=datetime.today().date())
 
 # 업무 추가 폼
 @task_bp.route('/add', methods=['GET'])
@@ -60,26 +60,28 @@ def add_get():
 # 업무 추가 처리 POST함수
 @task_bp.route('/add', methods=['POST'])
 def add_post():
-    due_date_str = request.form.get('due_date')
-    if not due_date_str:
-        flash("⚠ 마감일은 반드시 입력해야 합니다.")
-        return redirect(url_for('task.add_get'))
+    # 마감일 처리
+    if 'no_due_date' in request.form:
+        due_date = None
+    else:
+        due_date_str = request.form.get('due_date')
+        if not due_date_str:
+            flash("⚠ 마감일은 반드시 입력하거나 '미정'을 선택해야 합니다.", "danger")
+            return redirect(url_for('task.add_get'))
+        due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
 
     file = request.files.get('file')
-    file_id = None
-
-    if file and file.filename:
-        file_id = fs.put(file, filename=file.filename)
+    file_id = fs.put(file, filename=file.filename) if file and file.filename else None
 
     data = {
         'title': request.form['title'],
         'team': request.form['team'],
         'status': request.form['status'],
         'priority': request.form['priority'],
-        'due_date': datetime.strptime(due_date_str, '%Y-%m-%d'),
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'due_date': due_date,
         'file_id': file_id,
+        'created_at': datetime.now(),
+        'updated_at': datetime.now()
     }
 
     get_tasks_collection().insert_one(data)
@@ -90,29 +92,28 @@ def add_post():
 @task_bp.route('/edit/<task_id>', methods=['GET'])
 def edit_get(task_id):
     task = get_tasks_collection().find_one({'_id': ObjectId(task_id)})
-    return render_template('task/edit.html', task=task)
+    return render_template('task/edit.html', task=task, today=datetime.today().date())
 
 # 업무 수정 처리 POST함수
 @task_bp.route('/edit/<task_id>', methods=['POST'])
 def edit_post(task_id):
-    due_date_str = request.form.get('due_date')
-    if not due_date_str:
-        flash("⚠ 마감일은 반드시 입력해야 합니다.", "danger")
-        return redirect(url_for('task.edit_get', task_id=task_id))
-    
     update = {
         'title': request.form['title'],
         'team': request.form['team'],
         'status': request.form['status'],
         'priority': request.form['priority'],
-        'due_date': datetime.strptime(due_date_str, '%Y-%m-%d'),
         'updated_at': datetime.now()
     }
 
-    file = request.files.get('file')
-    if file and file.filename:
-        file_id = fs.put(file, filename=file.filename)
-        update['file_id'] = file_id
+    # 마감일 처리
+    if 'no_due_date' in request.form:
+        update['due_date'] = None
+    else:
+        due_date_str = request.form.get('due_date')
+        if not due_date_str:
+            flash("⚠ 마감일은 반드시 입력하거나 '미정'을 선택해야 합니다.", "danger")
+            return redirect(url_for('task.edit_get', task_id=task_id))
+        update['due_date'] = datetime.strptime(due_date_str, '%Y-%m-%d')
 
     get_tasks_collection().update_one({'_id': ObjectId(task_id)}, {'$set': update})
     flash("업무가 수정되었습니다.", "success")
@@ -136,50 +137,31 @@ def delete(task_id):
     flash("업무가 삭제되었습니다.", "success")
     return redirect(url_for('task.home'))
 
-# 통계 시각화 이미지
-@task_bp.route('/chart-image', methods=['GET'])
-def chart_image():
+@task_bp.route('/stat')
+def stat():
+    return render_template('task/stat.html')
+
+@task_bp.route('/api/chart-data')
+def chart_data():
     result = list(get_tasks_collection().aggregate([
         {"$group": {"_id": {"date": "$due_date", "status": "$status"}, "count": {"$sum": 1}}},
         {"$sort": {"_id.date": 1}}
     ]))
 
-    # 날짜별로 상태별 집계
     data = {}
     for item in result:
-        date = item['_id']['date'].strftime('%Y-%m-%d') if isinstance(item['_id']['date'], datetime) else str(item['_id']['date'])
+        date = item['_id']['date'].strftime('%Y-%m-%d') if hasattr(item['_id']['date'], 'strftime') else str(item['_id']['date'])
         status = item['_id']['status']
         if date not in data:
-            data[date] = {'대기중': 0, '진행중': 0, '완료': 0}
+            data[date] = {}
         data[date][status] = item['count']
 
-    # matplotlib 시각화
-    dates = sorted(data)
-    wait = [data[d]['대기중'] for d in dates]
-    doing = [data[d]['진행중'] for d in dates]
-    done = [data[d]['완료'] for d in dates]
+    return jsonify(data)
 
-    fig = Figure(figsize=(10, 5))
-    ax = fig.subplots()
-    ax.bar(dates, wait, label='대기중')
-    ax.bar(dates, doing, bottom=wait, label='진행중')
-    ax.bar(dates, done, bottom=[w + d for w, d in zip(wait, doing)], label='완료')
-    ax.set_xticklabels(dates, rotation=45)
-    ax.legend()
-    fig.tight_layout()
-
-    img = BytesIO()
-    fig.savefig(img, format='png')
-    img.seek(0)
-    return Response(img.getvalue(), content_type='image/png')
-
-@task_bp.route('/chart-by-team', methods=['GET'])
-def chart_by_team():
+@task_bp.route('/api/chart-by-team')
+def chart_by_team_api():
     result = list(get_tasks_collection().aggregate([
-        {"$group": {
-            "_id": {"team": "$team", "status": "$status"},
-            "count": {"$sum": 1}
-        }},
+        {"$group": {"_id": {"team": "$team", "status": "$status"}, "count": {"$sum": 1}}},
         {"$sort": {"_id.team": 1}}
     ]))
 
@@ -188,30 +170,7 @@ def chart_by_team():
         team = item['_id']['team']
         status = item['_id']['status']
         if team not in data:
-            data[team] = {'대기중': 0, '진행중': 0, '완료': 0}
+            data[team] = {}
         data[team][status] = item['count']
 
-    teams = list(data.keys())
-    wait = [data[t]['대기중'] for t in teams]
-    doing = [data[t]['진행중'] for t in teams]
-    done = [data[t]['완료'] for t in teams]
-
-    fig = Figure(figsize=(10, 5))
-    ax = fig.subplots()
-    ax.bar(teams, wait, label='대기중')
-    ax.bar(teams, doing, bottom=wait, label='진행중')
-    ax.bar(teams, done, bottom=[w + d for w, d in zip(wait, doing)], label='완료')
-    ax.set_title('팀별 업무 상태 분포')
-    ax.set_ylabel('업무 수')
-    ax.set_xticklabels(teams, rotation=0)
-    ax.legend()
-    fig.tight_layout()
-
-    img = BytesIO()
-    fig.savefig(img, format='png')
-    img.seek(0)
-    return Response(img.getvalue(), content_type='image/png')
-
-@task_bp.route('/stat', methods=['GET'])
-def stat():
-    return render_template('task/stat.html')
+    return jsonify(data)

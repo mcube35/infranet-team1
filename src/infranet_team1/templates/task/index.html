@@ -61,7 +61,22 @@
                 <td>{{ task.team }}</td>
                 <td>{{ task.status }}</td>
                 <td>{{ task.priority }}</td>
-                <td>{{ task.due_date }}</td>
+                <td>
+                    {% if task.due_date %}
+                        {% set due_date = task.due_date.date() %}
+                        {% set delta = (due_date - today).days %}
+
+                        {% if delta == 0 %}
+                        <span style="color:green;">{{ due_date.strftime('%Y-%m-%d') }} (D-DAY)</span>
+                        {% elif delta > 0 %}
+                        <span>{{ due_date.strftime('%Y-%m-%d') }} (D-{{ delta }})</span>
+                        {% else %}
+                        <span style="color:red;">{{ due_date.strftime('%Y-%m-%d') }} (D+{{ -delta }})</span>
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                    </td>
                 <td>
                     {% if task.file_id %}
                         <a href="{{ url_for('file_download', file_id=task.file_id) }}">다운로드</a>
