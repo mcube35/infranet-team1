@@ -78,7 +78,11 @@
         <div class="header-section header-right">
             {% if current_user.is_authenticated %}
                 <div class="user-box">
-                    <img src="{{ url_for('file_download', file_id=current_user.profile_image_id) if current_user.profile_image_id else url_for('static', filename='img/user_icon.png') }}" alt="프로필 사진" class="avatar" />
+                    {% if current_user.profile_image_id %}
+                        <img src="{{ url_for('file_download', file_id=current_user.profile_image_id) }}" alt="프로필 사진" class="avatar">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='img/user_icon.png') }}" alt="프로필 사진" class="avatar">
+                    {% endif %}
                     <div class="user-info-dropdown">
                         <strong>{{ current_user.name }}</strong>
                         <span>{{ current_user.email }}</span>
