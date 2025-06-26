@@ -7,6 +7,8 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from extension import get_fs
 from db import mongo_db
+from datetime import datetime, timedelta
+import logging
 
 client_bp = Blueprint("client", __name__)
 fs = get_fs()
@@ -110,6 +112,29 @@ def show_list():
     ]
 
     docs = list(get_clients_collection().aggregate(pipeline))
+
+    now = datetime.now()
+    for doc in docs:
+        contract = doc.get("contract", {})
+        end_date_raw = contract.get("end_date")
+
+        if isinstance(end_date_raw, str):
+            end_date = parse_date(end_date_raw)
+        elif isinstance(end_date_raw, datetime):
+            end_date = end_date_raw
+        else:
+            end_date = None
+
+        if end_date:
+            if end_date < now:
+                contract["highlight"] = "expired"
+            elif end_date - now <= timedelta(days=7):
+                contract["highlight"] = "soon"
+            else:
+                contract["highlight"] = "normal"
+        else:
+            contract["highlight"] = "unknown"
+
     return render_template("client/list.html", clients=docs, search=search)
 
 # ========== ✅ 고객사 상세 ==========
