@@ -1,63 +1,162 @@
 {% extends "base.html" %}
-{% block title %}인사 통계 대시보드{% endblock %}
+
+{% block title %}
+인사 통계 대시보드
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
 {% block content %}
 <h1>📊 인사 통계 대시보드</h1>
 <p>회사 전체의 인력 현황에 대한 주요 지표를 시각화하여 보여줍니다.</p>
 <hr>
 
-<!-- 주요 현황판 -->
 <fieldset style="margin-bottom: 20px;">
-    <legend><strong>주요 현황</strong></legend>
-    <div style="padding: 15px; font-size: 1.1em; text-align: center;">
-        <strong>총 직원:</strong> {{ total_employees }}명  | 
-        <strong style="color: green;">재직:</strong> {{ active_employees }}명  | 
-        <strong style="color: orange;">휴직:</strong> {{ on_leave_employees }}명  | 
-        <strong style="color: red;">퇴사:</strong> {{ resigned_employees }}명
-    </div>
+  <legend><strong>주요 현황</strong></legend>
+  <div style="padding: 15px; font-size: 1.1em; text-align: center;">
+    <strong>총 직원:</strong> {{ total_employees }}명  | 
+    <strong style="color: green;">재직:</strong> {{ active_employees }}명  | 
+    <strong style="color: orange;">휴직:</strong> {{ on_leave_employees }}명  | 
+    <strong style="color: red;">퇴사:</strong> {{ resigned_employees }}명
+  </div>
 </fieldset>
 
-<!-- 차트 영역 (2x3 그리드) -->
-<table style="width: 100%; border-spacing: 20px; border-collapse: separate;">
-    <tr>
-        <td style="width: 50%; vertical-align: top;">
-            <fieldset><legend><strong>부서별 직원 분포 (재직중)</strong></legend>
-                <img src="{{ url_for('hr_stats.chart_employees_by_department') }}" alt="부서별 직원 수" style="max-width: 100%;">
-            </fieldset>
-        </td>
-        <td style="width: 50%; vertical-align: top;">
-            <fieldset><legend><strong>직급별 직원 분포 (재직중)</strong></legend>
-                <img src="{{ url_for('hr_stats.chart_employees_by_position') }}" alt="직급별 직원 수" style="max-width: 100%;">
-            </fieldset>
-        </td>
-    </tr>
-    <tr>
-        <td style="width: 50%; vertical-align: top;">
-            <fieldset><legend><strong>직책/직무별 직원 분포 (재직중)</strong></legend><img src="{{ url_for('hr_stats.chart_employees_by_job_title') }}" alt="직책별 직원 수" style="max-width: 100%;"></fieldset>
-        </td>
-    <tr>
-        <td style="width: 50%; vertical-align: top;">
-            <fieldset><legend><strong>재직자 근속 연수 분포</strong></legend>
-                <img src="{{ url_for('hr_stats.chart_years_of_service') }}" alt="재직자 근속 연수" style="max-width: 100%;">
-            </fieldset>
-        </td>
-        <td style="width: 50%; vertical-align: top;">
-            <fieldset><legend><strong>퇴사자 근속 연수 분포</strong></legend>
-                <img src="{{ url_for('hr_stats.chart_resigned_years_of_service') }}" alt="퇴사자 근속 연수" style="max-width: 100%;">
-            </fieldset>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2" style="vertical-align: top;">
-            <fieldset><legend><strong>월별 입/퇴사 현황 (최근 12개월)</strong></legend>
-                <table style="width:100%">
-                    <tr>
-                        <td style="width:50%"><img src="{{ url_for('hr_stats.chart_monthly_hires') }}" alt="월별 입사자 수" style="max-width: 100%;"></td>
-                        <td style="width:50%"><img src="{{ url_for('hr_stats.chart_monthly_resignations') }}" alt="월별 퇴사자 수" style="max-width: 100%;"></td>
-                    </tr>
-                </table>
-            </fieldset>
-        </td>
-    </tr>
-</table>
+<style>
+  .chart-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+
+  .chart-row > div {
+    flex: 1;
+  }
+</style>
+
+<div class="chart-row">
+  <div>
+    <h3>부서별 분포</h3>
+    <canvas id="departmentChart" style="height:300px; width:100% "></canvas>
+  </div>
+  <div>
+    <h3>직급별 분포</h3>
+    <canvas id="positionChart" style="height:300px; width:100%"></canvas>
+  </div>
+  <div>
+    <h3>직책/직무별 분포</h3>
+    <canvas id="jobTitleChart" style="height:300px; width:100%"></canvas>
+  </div>
+</div>
+
+
+<div class="chart-row">
+    <div>
+        <h3>재직자 근속 연수</h3>
+        <canvas id="yosActiveChart" style="height:300px; width:100%"></canvas>
+    </div>
+    <div>
+        <h3>퇴사자 근속 연수</h3>
+        <canvas id="resignedYosChart" style="height:300px; width:100%"></canvas>
+    </div>
+</div>
+
+<div style="margin-bottom: 30px;">
+  <h3>월별 입/퇴사 현황 (최근 12개월)</h3>
+  <canvas id="hireResignChart" style="height:300px; width:100%"></canvas>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const barChartOptions = {
+    responsive: false,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  };
+
+  const lineChartOptions = {
+    responsive: false,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  };
+
+  const doughnutChartOptions = {
+    responsive: false,
+    maintainAspectRatio: false
+  };
+
+  const colors = {
+    department: 'rgba(54, 162, 235, 0.6)',
+    position: 'rgba(75, 192, 192, 0.6)',
+    job_title: 'rgba(255, 206, 86, 0.6)',
+    resigned_yos: 'rgba(255, 99, 132, 0.6)',
+    hires: 'rgba(54, 162, 235, 1)',
+    resignations: 'rgba(255, 99, 132, 1)',
+    yos_active: ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99']
+  };
+
+  async function renderChart(canvasId, apiUrl, chartType, color, options) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const response = await fetch(apiUrl);
+    const chartData = await response.json();
+    new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels: chartData.labels,
+        datasets: [{
+          label: '직원 수',
+          data: chartData.data,
+          backgroundColor: color,
+          borderColor: color,
+          borderWidth: 1
+        }]
+      },
+      options: options
+    });
+  }
+
+  async function renderComboChart(canvasId, apiUrl, options) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const response = await fetch(apiUrl);
+    const chartData = await response.json();
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          {
+            type: 'line',
+            label: chartData.datasets[0].label,
+            data: chartData.datasets[0].data,
+            borderColor: colors.hires,
+            backgroundColor: colors.hires,
+            tension: 0.1
+          },
+          {
+            type: 'line',
+            label: chartData.datasets[1].label,
+            data: chartData.datasets[1].data,
+            borderColor: colors.resignations,
+            backgroundColor: colors.resignations,
+            tension: 0.1
+          }
+        ]
+      },
+      options: options
+    });
+  }
+
+  renderChart('departmentChart', '/hr/stats/api/chart-data/department', 'bar', colors.department, barChartOptions);
+  renderChart('positionChart', '/hr/stats/api/chart-data/position', 'bar', colors.position, barChartOptions);
+  renderChart('jobTitleChart', '/hr/stats/api/chart-data/job_title', 'bar', colors.job_title, barChartOptions);
+  renderChart('yosActiveChart', '/hr/stats/api/chart-data/yos_active', 'doughnut', colors.yos_active, doughnutChartOptions);
+  renderChart('resignedYosChart', '/hr/stats/api/chart-data/yos_resigned', 'bar', colors.resigned_yos, barChartOptions);
+  renderComboChart('hireResignChart', '/hr/stats/api/chart-data/hires_vs_resignations', lineChartOptions);
+});
+</script>
+
 {% endblock %}

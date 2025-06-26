@@ -14,9 +14,10 @@
             <button type="submit">출근하기</button>
         </form>
     {% elif not today_record.clock_out %}
-        <form action="{{ url_for('att.clock_out') }}" method="post" style="display: inline;">
+        <form action="{{ url_for('att.clock_out') }}" method="post" style="display: inline;" onsubmit="return confirm('정말 퇴근하시겠습니까?');">
             <button type="submit">퇴근하기</button>
         </form>
+
     {% else %}
         <span>✅ 오늘은 모든 기록을 마쳤습니다.</span>
     {% endif %}
@@ -67,7 +68,6 @@
     </tbody>
 </table>
 
-{# 페이지네이션 영역이 여기에서 하단으로 이동했습니다. #}
 
 <hr style="margin-top: 30px;">
 
@@ -81,7 +81,7 @@
     </form>
 </fieldset>
 
-<!--  페이지네이션 영역이 이 위치로 이동했습니다.  -->
+<!--  페이지네이션 영역  -->
 <div class="pagination" style="text-align: center; margin-top: 20px;">
     {% if total_pages > 0 %}
         {% if current_page > 1 %}
