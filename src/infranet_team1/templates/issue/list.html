@@ -4,15 +4,14 @@
 
 {% block head %}
   {{ super() }}
-  {# 기존 스타일 블록을 제거했습니다. #}
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>{{ current_family | capitalize }} 이슈</h1> 
+    <h1>{{ current_family | capitalize }} 이슈 ({{ client_company_display_name_on_top }})</h1> 
     <a href="{{ url_for('issue.write_get', family_name=current_family) }}">글쓰기</a>
     
-    <table class="board-table" border="1" cellspacing="0" cellpadding="5"> {# 기본 테이블 속성은 유지 #}
+    <table class="board-table" border="1" cellspacing="0" cellpadding="5">
         <thead>
             <tr>
                 <th class="post-id">번호</th>
@@ -20,7 +19,7 @@
                 <th class="post-author">작성자</th>
                 <th class="post-author">고객사</th>
                 <th class="post-date">작성일</th>
-                <th class="post-manage">관리</th> {# 헤더는 유지 #}
+                <th class="post-manage">관리</th>
             </tr>
         </thead>
         <tbody>
@@ -33,14 +32,19 @@
                         <a href="{{ url_for('issue.detail', family_name=current_family, issue_id=post.mongo_id) }}">{{ post.title }}</a>
                     </td>
                     <td class="post-author">{{ post.reporter_name }}</td> 
-                    <td class="post-author">{{ post.client_company_name }}</td> 
+                    <td class="post-author">
+                        {{ post.client_company_name }} 
+                        {% if post.client_company_id and post.client_company_id|length >= 6 %}
+                            <span style="font-size: 0.8em; color: #888;">
+                                ({{ post.client_company_id[:3] }}...{{ post.client_company_id[-3:] }})
+                            </span>
+                        {% endif %}
+                    </td> 
                     <td class="post-date">{{ post.created_at }}</td>
                     <td class="post-manage"> 
-                        <div class="action-buttons"> {# 클래스는 유지하나 CSS가 없으므로 시각적 효과 없음 #}
-                            {# 수정 링크 #}
+                        <div class="action-buttons">
                             <a href="{{ url_for('issue.edit_get', family_name=current_family, issue_id=post.mongo_id) }}" class="edit-btn">수정</a>
                             
-                            {# 삭제 폼 (POST 요청) - inline 스타일은 기능적 목적을 위해 유지 #}
                             <form action="{{ url_for('issue.delete', family_name=current_family, issue_id=post.mongo_id) }}" method="post" style="display:inline;" onsubmit="return confirm('이 게시글을 정말 삭제하시겠습니까?');">
                                 <button type="submit" class="delete-btn">삭제</button>
                             </form>

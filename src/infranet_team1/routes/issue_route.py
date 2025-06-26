@@ -13,10 +13,7 @@ def get_issues(): return mongo_db["issues"]
 def get_clients(): return mongo_db["clients"]
 def get_hr_collection(): return mongo_db["hr"] 
 
-# DUMMY_REPORTER_ID 정의를 완전히 제거했습니다.
-
 def is_valid_family(family_name):
-    # 'backend', 'frontend', 'ui' 외의 다른 family_name이 있다면 여기에 추가해야 합니다.
     return family_name in ["backend", "frontend", "ui"]
 
 def _to_str_or_default(value, default="없음"):
@@ -46,7 +43,7 @@ def home():
     status_map = {"신규 이슈": ISSUE_STATUS[1], "진행중인 이슈": ISSUE_STATUS[2], "퇴마된 이슈": ISSUE_STATUS[3]}
 
     users_map = {str(u["_id"]): u.get("name", "알 수 없는 사용자") 
-                 for u in get_hr_collection().find({}, {"name": 1})}
+                  for u in get_hr_collection().find({}, {"name": 1})}
 
     result = {}
     for fname, fval in family_map.items():
@@ -75,7 +72,7 @@ def show_list(family_name):
     ).sort("created_at", -1)
 
     users_map = {str(u["_id"]): u.get("name", "알 수 없는 사용자") 
-                 for u in get_hr_collection().find({}, {"name": 1})}
+                  for u in get_hr_collection().find({}, {"name": 1})}
 
     posts = []
     for idx, issue in enumerate(issues_cursor):
@@ -90,12 +87,22 @@ def show_list(family_name):
             "status": issue.get("status", "상태없음"),
             "reporter_name": users_map.get(_to_str_or_default(issue.get("reported_by"), None), "알 수 없는 사용자"),
             "client_company_id": _to_str_or_default(issue.get("client_company_id")),
-            "client_company_name": issue.get("client_company_name", "고객사없음"),
+            "client_company_name": issue.get("client_company_name", "고객사없음"), # DB에서 가져온 고객사 이름
             "assigned_to_id": _to_str_or_default(issue.get("assigned_to")),
             "created_at": _format_datetime(issue.get("created_at")),
             "updated_at": _format_datetime(issue.get("updated_at"))
         })
-    return render_template("issue/list.html", posts=posts, current_family=family_name)
+
+    # write_post에서 넘어온 고객사 이름을 받습니다.
+    # 만약 URL에 이 파라미터가 없다면, 기본값 (예: "전체 고객사")을 사용합니다.
+    # 'selected_client_name_from_write'로 이름을 명확히 했습니다.
+    selected_client_name_from_write = request.args.get("selected_client_name_from_write", "전체 고객사")
+
+    return render_template("issue/list.html", 
+                           posts=posts, 
+                           current_family=family_name,
+                           # 이 변수를 템플릿으로 전달합니다.
+                           client_company_display_name_on_top=selected_client_name_from_write)
 
 
 @issue_bp.route("/write/<family_name>", methods=["GET"])
@@ -104,7 +111,6 @@ def write_get(family_name):
     
     return render_template(
         "issue/write.html",
-        category_name=ISSUE_STATUS.get(1), 
         current_family=family_name 
     )
 
@@ -117,8 +123,10 @@ def write_post(family_name):
     title = request.form.get("title")
     description = request.form.get("description")
     selected_client_company_id_str = request.form.get("client_company_id")
+    # write.html에서 추가한 name="client_company_name_for_display" 필드의 값을 받습니다.
+    # 이 값이 사용자가 선택한 고객사 이름입니다.
+    selected_client_company_name_from_form = request.form.get("client_company_name_for_display")
     
-    # DUMMY_REPORTER_ID 대신 None으로 초기화합니다.
     final_reporter_id = None 
 
     if current_user.is_authenticated:
@@ -126,22 +134,21 @@ def write_post(family_name):
             final_reporter_id = ObjectId(current_user.get_id()) 
         except Exception as e:
             print(f"Error converting current_user.id ({current_user.get_id()}) to ObjectId: {e}")
-            # 오류 발생 시 None으로 유지 (또는 다른 대체 로직 구현)
             final_reporter_id = None 
     else:
-        # 로그인 안 된 경우, final_reporter_id는 None으로 유지
         print(f"No user logged in. Using None for reporter ID.")
 
     fixed_status_id = 1 
     fixed_status_name = ISSUE_STATUS.get(fixed_status_id, "알 수 없음") 
 
-    client_name, client_obj_id = None, None
+    client_name_for_db, client_obj_id = None, None
     if selected_client_company_id_str:
         try:
             client_obj_id = ObjectId(selected_client_company_id_str)
             client_doc = get_clients().find_one({"_id": client_obj_id})
             if client_doc:
-                client_name = client_doc.get("company_name", "알 수 없음")
+                # DB에 저장할 고객사 이름은 DB에서 조회된 이름 (정확한 데이터)을 사용합니다.
+                client_name_for_db = client_doc.get("company_name", "알 수 없음")
         except Exception as e:
             print(f"Error processing client_company_id: {e}")
             return "유효하지 않은 고객사 ID입니다.", 400
@@ -150,12 +157,12 @@ def write_post(family_name):
         "title": title,
         "description": description,
         "category": "일반", 
-        "reported_by": final_reporter_id, # None이 들어갈 수 있도록 변경
+        "reported_by": final_reporter_id,
         "assigned_to": None, 
         "status_id": fixed_status_id, 
         "status": fixed_status_name, 
         "client_company_id": client_obj_id, 
-        "client_company_name": client_name, 
+        "client_company_name": client_name_for_db, # DB에 저장될 고객사 이름
         "project_family": family_name, 
         "created_at": datetime.now(),
         "updated_at": datetime.now(),
@@ -163,7 +170,11 @@ def write_post(family_name):
     
     main_issue_collection.insert_one(issue_data) 
     
-    return redirect(url_for("issue.show_list", family_name=family_name)) 
+    # 리다이렉트할 때, 폼에서 받은 고객사 이름을 URL 파라미터로 넘겨줍니다.
+    # 이렇게 하면 show_list에서 이 값을 바로 사용할 수 있습니다.
+    return redirect(url_for("issue.show_list", 
+                            family_name=family_name,
+                            selected_client_name_from_write=selected_client_company_name_from_form))
     
 
 @issue_bp.route("/detail/<family_name>/<issue_id>")
@@ -201,6 +212,7 @@ def edit_get(family_name, issue_id):
 
         issue['mongo_id'] = _to_str_or_default(issue.get("_id"))
         issue['client_company_id_str'] = _to_str_or_default(issue.get("client_company_id"))
+        # client_company_name_for_input 값을 edit 페이지 폼에 미리 채워줍니다.
         issue['client_company_name_for_input'] = issue.get("client_company_name", "")
 
         status_options = []
@@ -225,6 +237,10 @@ def edit_post(family_name, issue_id):
     description = request.form.get("description")
     status_name = request.form.get("status") 
     selected_client_company_id_str = request.form.get("client_company_id")
+    # edit 페이지에서도 고객사 이름 입력 필드에 name을 추가했다면 받아올 수 있습니다.
+    # 여기서는 DB에 저장된 이름을 사용하므로 이 변수는 필수는 아닙니다.
+    # selected_client_company_name_from_form = request.form.get("client_company_name_for_display")
+
 
     client_name_to_save, client_obj_id = None, None
     if selected_client_company_id_str:
@@ -243,7 +259,7 @@ def edit_post(family_name, issue_id):
             "description": description,
             "status": status_name, 
             "client_company_id": client_obj_id,
-            "client_company_name": client_name_to_save,
+            "client_company_name": client_name_to_save, # DB에 저장될 고객사 이름
             "updated_at": datetime.now()
         }
     }
