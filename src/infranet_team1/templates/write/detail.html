@@ -4,15 +4,11 @@
 
 {% block content %}
 <div class="container" style="display: flex;">
-    <!-- 🔹 왼쪽 사이드바: 카테고리 -->
+    <!-- 🔹 이전화면으로 돌아가기 링크 -->
     <aside class="sidebar" style="width: 200px; margin-right: 20px;">
-        <h3>카테고리</h3>
-        <ul class="category-list">
-            <li><a href="{{ url_for('write.home') }}">전체보기</a></li>
-            {% for cat in category_list %}
-            <li><a href="{{ url_for('write.home', category=cat) }}">{{ cat }}</a></li>
-            {% endfor %}
-        </ul>
+        <a href="{{ url_for('write.home') }}" style="font-weight: bold; display: block; margin-bottom: 10px;">
+            ← 목록으로
+        </a>
     </aside>
 
     <!-- 🔸 오른쪽 본문: 게시글 상세 및 댓글 -->

@@ -132,16 +132,12 @@ def detail(post_id):
     
     post_author = get_hr_collection().find_one({"_id": post["author_id"]})
     user_name = post_author["name"] if post_author else "알 수 없음"
-    
-    category_list = get_posts_collection().distinct("category") #카테고리 추가
-    
 
     return render_template(
         "write/detail.html",
         post=post, 
         author_map=author_map,
-        user_name=user_name,
-        category_list=category_list
+        user_name=user_name
                         )
 
 
