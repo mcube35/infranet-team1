@@ -40,8 +40,8 @@
       <td>{{ c.company_name }}</td>
       <td>{{ c.department }}</td>
       <td>{{ c.contract.status }}</td>
-      <td>{{ c.contract.start_date }}</td>
-      <td>{{ c.contract.end_date }}</td>
+      <td>{{ c.contract.start_date.strftime('%Y-%m-%d') }}</td>
+      <td>{{ c.contract.end_date.strftime('%Y-%m-%d') }}</td>
       <td><a href="{{ url_for('client.detail', id=c._id) }}">보기</a></td>
     </tr>
     {% endfor %}
