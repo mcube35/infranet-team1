@@ -7,12 +7,6 @@
 
     <form id="postForm" method="POST" action="{{ url_for('issue.write_post', family_name=current_family) }}" onsubmit="return validateForm()">
         <div>
-            <label>진행상태:</label>
-            <input type="text" value="{{ category_name }}" disabled class="category-input" />
-            <input type="hidden" name="status_id" value="1" />
-        </div>
-
-        <div>
             <label for="clientSearchInput">고객사:</label>
             {# 여기에 name 속성 추가: 선택된 고객사 이름이 폼 데이터로 전송됩니다. #}
             <input type="text" id="clientSearchInput" name="client_company_name_for_display" placeholder="고객사 이름 또는 ID 검색 (필수)" autocomplete="off" /> 

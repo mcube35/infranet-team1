@@ -111,7 +111,6 @@ def write_get(family_name):
     
     return render_template(
         "issue/write.html",
-        category_name=ISSUE_STATUS.get(1), 
         current_family=family_name 
     )
 

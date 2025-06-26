@@ -34,8 +34,10 @@
                     <td class="post-author">{{ post.reporter_name }}</td> 
                     <td class="post-author">
                         {{ post.client_company_name }} 
-                        {% if post.client_company_id %}
-                            <span style="font-size: 0.8em; color: #888;">({{ post.client_company_id[-4:] }})</span> {# ID의 마지막 4자리 표시 #}
+                        {% if post.client_company_id and post.client_company_id|length >= 6 %}
+                            <span style="font-size: 0.8em; color: #888;">
+                                ({{ post.client_company_id[:3] }}...{{ post.client_company_id[-3:] }})
+                            </span>
                         {% endif %}
                     </td> 
                     <td class="post-date">{{ post.created_at }}</td>
