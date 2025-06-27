@@ -22,25 +22,28 @@
     <form method="GET" action="{{ url_for('task.home') }}">
         팀:
         <select name="team">
-            <option value="">전체</option>
+            <option value="" {% if not request.args.get('team') %}selected{% endif %}>전체</option>
             {% for dept in departments %}
                 {% if dept.strip() %}
-                    <option value={{dept}}>{{dept}}</option>
+                    <option value="{{ dept }}" {% if request.args.get('team') == dept %}selected{% endif %}>{{ dept }}</option>
                 {% endif %}
             {% endfor %}
         </select>
 
         상태:
         <select name="status">
-            <option value="전체">전체</option>
-            <option value="대기중">대기중</option>
-            <option value="진행중">진행중</option>
-            <option value="완료">완료</option>
+            <option value="전체" {% if request.args.get('status') == '전체' or not request.args.get('status') %}selected{% endif %}>전체</option>
+            <option value="대기중" {% if request.args.get('status') == '대기중' %}selected{% endif %}>대기중</option>
+            <option value="진행중" {% if request.args.get('status') == '진행중' %}selected{% endif %}>진행중</option>
+            <option value="완료" {% if request.args.get('status') == '완료' %}selected{% endif %}>완료</option>
         </select>
 
-        시작일: <input type="date" name="start_date">
-        종료일: <input type="date" name="end_date">
-        <button type="submit">필터 적용</button>
+        기간:
+        <input type="date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+        ~
+        <input type="date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+
+        <button type="submit">검색</button>
     </form>
 
     <a href="{{ url_for('task.add_get') }}">+ 업무 추가</a>
@@ -68,18 +71,22 @@
                     {% if task.due_date %}
                         {% set due_date = task.due_date.date() %}
                         {% set delta = (due_date - today).days %}
+                        {% set is_done = (task.status == '완료') %}
 
                         {% if delta == 0 %}
-                        <span style="color:green;">{{ due_date.strftime('%Y-%m-%d') }} (D-DAY)</span>
+                            <span style="color:green;">{{ due_date.strftime('%Y-%m-%d') }} (D-DAY)</span>
                         {% elif delta > 0 %}
-                        <span>{{ due_date.strftime('%Y-%m-%d') }} (D-{{ delta }})</span>
+                            <span>{{ due_date.strftime('%Y-%m-%d') }} (D-{{ delta }})</span>
                         {% else %}
-                        <span style="color:red;">{{ due_date.strftime('%Y-%m-%d') }} (D+{{ -delta }})</span>
+                            <span style="{% if not is_done %}color:red;{% endif %}">
+                                {{ due_date.strftime('%Y-%m-%d') }} (D+{{ -delta }})
+                            </span>
                         {% endif %}
                     {% else %}
-                        -
+                        <span style="color:gray;">미정</span>
                     {% endif %}
-                    </td>
+                </td>
+
                 <td>
                     {% if task.file_id %}
                         <a href="{{ url_for('file_download', file_id=task.file_id) }}">다운로드</a>

@@ -51,6 +51,7 @@
             name="due_date"
             value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}"
             {% if not task.due_date %}disabled{% endif %}
+            required
         >
         <label>
             <input type="checkbox" id="no_due_date_checkbox" name="no_due_date"
@@ -58,10 +59,6 @@
             > 마감일 미정
         </label>
         <br>
-
-        {% if task.due_date and task.due_date.date() < today %}
-            <span style="color:red;">(마감일이 지났습니다!)</span>
-        {% endif %}
 
         <script>
             const checkbox = document.getElementById('no_due_date_checkbox');
