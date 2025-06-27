@@ -27,7 +27,7 @@
     <br/><br/>
 
     <label>내용:<br/>
-        <textarea name="content" rows="10" required>{{ post.content if post else '' }}</textarea>
+        <textarea name="content" rows="10" required>{{ post.content.strip() if post else '' }}</textarea>
     </label>
     <br/><br/>
 

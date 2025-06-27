@@ -50,7 +50,7 @@
             <!-- 버튼 -->
             <div class="button-group">
                 <button type="submit">수정 완료</button>
-                {# 취소 버튼은 상세 페이지로 돌아갑니다. #}
+
                 <a href="{{ url_for('issue.detail', family_name=current_family, issue_id=issue.mongo_id) }}">취소</a>
             </div>
         </form>

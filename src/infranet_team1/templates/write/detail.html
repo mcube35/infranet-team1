@@ -11,6 +11,9 @@
         </a>
     </aside>
 
+    {% set is_post_author = (post.author_id|string == current_user.id) %}
+    {% set is_admin = current_user.role in ['admin', 'system'] %}
+
     <!-- 🔸 오른쪽 본문: 게시글 상세 및 댓글 -->
     <main style="flex: 1;">
         <article class="post-detail">
@@ -25,13 +28,18 @@
                 <pre>{{ post.content }}</pre>
             </div>
 
+
+            {% if is_post_author or is_admin %}
             <div class="post-actions">
                 <a href="{{ url_for('write.edit_form', post_id=post._id) }}">수정</a>
                 <form method="POST" action="{{ url_for('write.delete', post_id=post._id) }}" style="display:inline;">
                     <button type="submit" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
                 </form>
             </div>
+            {% endif %}
         </article>
+
+        <hr>
 
         <section class="comments">
             <h3>댓글 ({{ post.comments | length }})</h3>
@@ -39,13 +47,11 @@
             <ul>
                 {% for comment in post.comments %}
                 <li>
+                    {% set is_comment_author = (comment.author_id|string == current_user.id) %}
+
                     <b>{{ author_map[comment.author_id] if comment.author_id in author_map else '알 수 없음' }}</b>
                     <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
                     <pre class="small_ui">{{ comment.content }}</pre>
-
-                    {% set is_comment_author = (comment.author_id|string == current_user.id) %}
-                    {% set is_post_author = (post.author_id|string == current_user.id) %}
-                    {% set is_admin = current_user.role in ['admin', 'system'] %}
 
                     {% if is_comment_author or is_post_author or is_admin %}
                     <form method="POST" action="{{ url_for('write.delete_comment', post_id=post._id) }}" style="display:inline;">
@@ -59,6 +65,8 @@
             {% else %}
             <p>댓글이 없습니다.</p>
             {% endif %}
+
+            <hr>
 
             <h4>댓글 작성</h4>
             <form method="POST" action="{{ url_for('write.add_comment', post_id=post._id) }}">

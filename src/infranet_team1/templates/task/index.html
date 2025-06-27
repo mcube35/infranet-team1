@@ -22,9 +22,12 @@
     <form method="GET" action="{{ url_for('task.home') }}">
         팀:
         <select name="team">
-            <option value="전체">전체</option>
-            <option value="개발팀">개발팀</option>
-            <option value="영업팀">영업팀</option>
+            <option value="">전체</option>
+            {% for dept in departments %}
+                {% if dept.strip() %}
+                    <option value={{dept}}>{{dept}}</option>
+                {% endif %}
+            {% endfor %}
         </select>
 
         상태:

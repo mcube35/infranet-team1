@@ -50,12 +50,14 @@ def home():
             pass
 
     task_list = get_tasks_collection().find(query).sort("due_date", -1)
-    return render_template('task/index.html', tasks=task_list, today=datetime.today().date())
+    departments = mongo_db["hr"].distinct("department")
+    return render_template('task/index.html', tasks=task_list, today=datetime.today().date(), departments=departments)
 
 # 업무 추가 폼
 @task_bp.route('/add', methods=['GET'])
 def add_get():
-    return render_template('task/add.html')
+    departments = mongo_db["hr"].distinct("department")
+    return render_template('task/add.html', departments=departments)
 
 # 업무 추가 처리 POST함수
 @task_bp.route('/add', methods=['POST'])
@@ -91,8 +93,9 @@ def add_post():
 # 업무 수정 폼
 @task_bp.route('/edit/<task_id>', methods=['GET'])
 def edit_get(task_id):
+    departments = mongo_db["hr"].distinct("department")
     task = get_tasks_collection().find_one({'_id': ObjectId(task_id)})
-    return render_template('task/edit.html', task=task, today=datetime.today().date())
+    return render_template('task/edit.html', task=task, today=datetime.today().date(), departments=departments)
 
 # 업무 수정 처리 POST함수
 @task_bp.route('/edit/<task_id>', methods=['POST'])

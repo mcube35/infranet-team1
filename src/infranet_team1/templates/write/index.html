@@ -59,14 +59,14 @@
             {% endfor %}
         </ul>
 
+        {% else %}
+        <p>게시글이 없습니다.</p>
+        {% endif %}
+        
         <!-- 게시글 목록 하단에 새글 작성 버튼 추가 -->
         <div style="margin-top: 20px;">
             <a href="{{ url_for('write.write_form') }}" class="btn btn-primary">새글 작성하기</a>
         </div>
-
-        {% else %}
-        <p>게시글이 없습니다.</p>
-        {% endif %}
     </main>
     <!-- 통계 패널 -->
     <section class="statistics" style="flex: 1; padding: 10px; background-color: #f9f9f9; border-left: 1px solid #ccc;">
@@ -76,12 +76,6 @@
             <li>{{ user_name }} - {{ count }}회</li>
             {% endfor %}
         </ul>
-        <h3>☁️ 워드 클라우드</h3>
-        {% if wordcloud_url %}
-            <img src="{{ wordcloud_url }}" alt="워드 클라우드" style="width: 100%; max-width: 200px;">
-        {% else %}
-            <p>데이터 없음</p>
-        {% endif %}
     </section>
     </div>
 </div>

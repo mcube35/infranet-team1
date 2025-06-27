@@ -72,16 +72,11 @@ def home():
             name = id_to_name.get(doc["_id"], "알 수 없음")
             top_users.append((name, doc["count"]))
 
-    # 6. 워드 클라우드 이미지 경로
-    wordcloud_path = os.path.join("static", "images", "wordcloud.png")
-    wordcloud_url = "/" + wordcloud_path.replace("\\", "/") if os.path.exists(wordcloud_path) else None
-
     return render_template(
         "write/index.html",
         posts=posts,
         author_map=author_map,
         top_users=top_users,
-        wordcloud_url=wordcloud_url,
         request=request,
         selected_category=category
     )

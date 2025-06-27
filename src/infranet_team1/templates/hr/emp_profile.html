@@ -33,24 +33,12 @@
     <fieldset style="margin-bottom: 20px;">
         <legend><strong>회사 정보</strong></legend>
         <div style="padding: 15px;">
-            {# 부서: 텍스트 입력에서 드롭다운으로 변경  #}
             <label for="department">부서:</label><br>
-            <select id="department" name="department" required>
-                <option value="">-- 부서 선택 --</option>
-                {% for dept in departments %}
-                    <option value="{{ dept }}" {% if employee and employee.department == dept %}selected{% endif %}>{{ dept }}</option>
-                {% endfor %}
-            </select>
+            <input type="text" id="department" name="department" value="{{ employee.department }}" required>
             <br><br>
 
-            {#직위: 텍스트 입력에서 드롭다운으로 변경#}
             <label for="position">직위:</label><br>
-            <select id="position" name="position" required>
-                <option value="">-- 직위 선택 --</option>
-                {% for pos in positions %}
-                    <option value="{{ pos }}" {% if employee and employee.position == pos %}selected{% endif %}>{{ pos }}</option>
-                {% endfor %}
-            </select>
+            <input type="text" id="position" value="{{ employee.position }}" name="position" required>
             <br><br>
 
             <label for="job_title">직책/직무:</label><br><input type="text" id="job_title" name="job_title" value="{{ employee.job_title if employee else '' }}"><br><br>

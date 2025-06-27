@@ -19,11 +19,15 @@
 
     <form method="POST" enctype="multipart/form-data" action="{{ url_for('task.edit_post', task_id=task._id) }}">
         제목: <input type="text" name="title" value="{{ task.title }}" required><br>
-
+        
         팀:
         <select name="team" required>
-            <option value="개발팀" {% if task.team == "개발팀" %}selected{% endif %}>개발팀</option>
-            <option value="영업팀" {% if task.team == "영업팀" %}selected{% endif %}>영업팀</option>
+            <option value="">-- 팀 선택 --</option>
+            {% for dept in departments %}
+                {% if dept.strip() %}
+                    <option value={{dept}} {% if task.team == dept %}selected{% endif %}>{{dept}}</option>
+                {% endif %}
+            {% endfor %}
         </select><br>
 
         상태:

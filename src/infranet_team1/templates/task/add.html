@@ -31,8 +31,11 @@
         팀:
         <select name="team" required>
             <option value="">-- 팀 선택 --</option>
-            <option value="개발팀">개발팀</option>
-            <option value="영업팀">영업팀</option>
+            {% for dept in departments %}
+                {% if dept.strip() %}
+                    <option value={{dept}}>{{dept}}</option>
+                {% endif %}
+            {% endfor %}
         </select><br>
 
         상태:
