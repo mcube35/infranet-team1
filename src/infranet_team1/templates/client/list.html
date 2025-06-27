@@ -31,10 +31,11 @@
     {% for c in clients %}
     <tr
       {% if c.contract.highlight == "expired" %}
-        style="background-color: #ffe6e6;"  <!-- 연한 빨강 -->
+        style="background-color: #ffe6e6;" 
       {% elif c.contract.highlight == "soon" %}
-        style="background-color: #fff3cd;"  <!-- 연한 노랑 -->
+        style="background-color: #fff3cd;" 
       {% endif %}
+    >
       <td>{{ c._id }}</td>
       <td>{{ c.company_name }}</td>
       <td>{{ c.department }}</td>

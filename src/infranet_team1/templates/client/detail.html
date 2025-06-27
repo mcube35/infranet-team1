@@ -69,13 +69,19 @@
         <td>{{ client_doc.notes or '없음' }}</td>
     </tr>
     <tr>
-        <th>계약서 파일</th>
+    <tr>
+    <th>계약서 파일</th>
         <td>
             {% if client_doc.contract_files %}
                 <ul>
                     {% for file in client_doc.contract_files %}
+                        {% set name = file.file_name %}
                         <li>
-                            {{ file.file_name }}
+                            {% if name|length > 25 %}
+                                {{ name[:15] }}...{{ name[-5:] }}
+                            {% else %}
+                                {{ name }}
+                            {% endif %}
                             [
                             <a href="{{ url_for('file_download', file_id=file.file_id) }}">다운로드</a>
                             |
@@ -89,14 +95,22 @@
             {% endif %}
         </td>
     </tr>
+
     <tr>
         <th>기타 첨부파일</th>
         <td>
             {% if client_doc.attachments %}
                 <ul>
                     {% for file in client_doc.attachments %}
+                        {% set name = file.file_name %}
                         <li>
-                            <a href="{{ url_for('file_download', file_id=file.file_id) }}">{{ file.file_name }}</a>
+                            <a href="{{ url_for('file_download', file_id=file.file_id) }}" title="{{ name }}">
+                                {% if name|length > 25 %}
+                                    {{ name[:15] }}...{{ name[-5:] }}
+                                {% else %}
+                                    {{ name }}
+                                {% endif %}
+                            </a>
                         </li>
                     {% endfor %}
                 </ul>
