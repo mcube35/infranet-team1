@@ -88,7 +88,6 @@ def show_list(family_name):
             "reporter_name": users_map.get(_to_str_or_default(issue.get("reported_by"), None), "알 수 없는 사용자"),
             "client_company_id": _to_str_or_default(issue.get("client_company_id")),
             "client_company_name": issue.get("client_company_name", "고객사없음"), # DB에서 가져온 고객사 이름
-            "assigned_to_id": _to_str_or_default(issue.get("assigned_to")),
             "created_at": _format_datetime(issue.get("created_at")),
             "updated_at": _format_datetime(issue.get("updated_at"))
         })
@@ -138,9 +137,6 @@ def write_post(family_name):
     else:
         print(f"No user logged in. Using None for reporter ID.")
 
-    fixed_status_id = 1 
-    fixed_status_name = ISSUE_STATUS.get(fixed_status_id, "알 수 없음") 
-
     client_name_for_db, client_obj_id = None, None
     if selected_client_company_id_str:
         try:
@@ -157,10 +153,8 @@ def write_post(family_name):
         "title": title,
         "description": description,
         "category": "일반", 
-        "reported_by": final_reporter_id,
-        "assigned_to": None, 
-        "status_id": fixed_status_id, 
-        "status": fixed_status_name, 
+        "reported_by": final_reporter_id, 
+        "status": "신규", 
         "client_company_id": client_obj_id, 
         "client_company_name": client_name_for_db, # DB에 저장될 고객사 이름
         "project_family": family_name, 
@@ -187,7 +181,6 @@ def detail(family_name, issue_id):
 
         issue["mongo_id"] = _to_str_or_default(issue.get("_id"))
         issue["reporter_name_display"] = _get_reporter_name(issue.get("reported_by")) 
-        issue["assigned_to_str"] = _to_str_or_default(issue.get("assigned_to"))
         issue["client_company_id_str"] = _to_str_or_default(issue.get("client_company_id"))
         issue["created_at_str"] = _format_datetime(issue.get("created_at"))
         issue["updated_at_str"] = _format_datetime(issue.get("updated_at"))
