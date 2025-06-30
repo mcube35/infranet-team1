@@ -37,6 +37,8 @@ def home():
     end_date = request.args.get('end_date')
 
     query = {}
+    filter_reset = False # 초기화 여부 플래그
+    
     if team_filter and team_filter != '전체':
         query['team'] = team_filter
     if status_filter and status_filter != '전체':
@@ -45,13 +47,28 @@ def home():
         try:
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-            query['due_date'] = {"$gte": start_dt, "$lte": end_dt}
+            if start_dt > end_dt:
+                flash("⚠ 시작일은 종료일보다 늦을 수 없습니다.", "warning")
+                team_filter = None
+                status_filter = None
+                start_date = None
+                end_date = None
+                query = {}  # 전체 조회로 초기화
+                filter_reset = True
+            else:
+                query['due_date'] = {"$gte": start_dt, "$lte": end_dt}
         except ValueError:
-            pass
+            flash("⚠ 날짜 형식이 잘못되었습니다.", "warning")
+            team_filter = None
+            status_filter = None
+            start_date = None
+            end_date = None
+            query = {}
+            filter_reset = True
 
     task_list = get_tasks_collection().find(query).sort("due_date", -1)
     departments = mongo_db["hr"].distinct("department")
-    return render_template('task/index.html', tasks=task_list, today=datetime.today().date(), departments=departments)
+    return render_template('task/index.html', tasks=task_list, today=datetime.today().date(), departments=departments, filter_reset=filter_reset)
 
 # 업무 추가 폼
 @task_bp.route('/add', methods=['GET'])
@@ -73,7 +90,12 @@ def add_post():
         due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
 
     file = request.files.get('file')
-    file_id = fs.put(file, filename=file.filename) if file and file.filename else None
+    if file and file.filename:
+        file_id = fs.put(file, filename=file.filename)
+        file_name = file.filename
+    else:
+        file_id = None
+        file_name = None
 
     data = {
         'title': request.form['title'],
@@ -82,6 +104,7 @@ def add_post():
         'priority': request.form['priority'],
         'due_date': due_date,
         'file_id': file_id,
+        'file_name': file_name,
         'created_at': datetime.now(),
         'updated_at': datetime.now()
     }
@@ -118,6 +141,13 @@ def edit_post(task_id):
             return redirect(url_for('task.edit_get', task_id=task_id))
         update['due_date'] = datetime.strptime(due_date_str, '%Y-%m-%d')
 
+    # 파일 업로드 처리
+    file = request.files.get('file')
+    if file and file.filename:
+        file_id = fs.put(file, filename=file.filename)
+        update['file_id'] = file_id
+        update['file_name'] = file.filename
+        
     get_tasks_collection().update_one({'_id': ObjectId(task_id)}, {'$set': update})
     flash("업무가 수정되었습니다.", "success")
     return redirect(url_for('task.home'))

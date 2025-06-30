@@ -1,5 +1,10 @@
 {% extends "base.html" %}
-<!-- Flash 메시지 표시 영역 -->
+
+{% block title %}업무 수정{% endblock %}
+
+{% block content %}
+<h1>업무 수정</h1>
+
 {% with messages = get_flashed_messages() %}
     {% if messages %}
         <div style="margin-bottom: 1em;">
@@ -12,68 +17,83 @@
     {% endif %}
 {% endwith %}
 
-{% block title %}업무 수정{% endblock %}
+<form method="POST" enctype="multipart/form-data">
+    <label>제목:
+        <input type="text" name="title" value="{{ task.title }}" required>
+    </label><br><br>
 
-{% block content %}
-    <h1>업무 수정</h1>
-
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('task.edit_post', task_id=task._id) }}">
-        제목: <input type="text" name="title" value="{{ task.title }}" required><br>
-        
-        팀:
+    <label>팀:
         <select name="team" required>
-            <option value="">-- 팀 선택 --</option>
             {% for dept in departments %}
                 {% if dept.strip() %}
-                    <option value={{dept}} {% if task.team == dept %}selected{% endif %}>{{dept}}</option>
+                    <option value="{{ dept }}" {% if task.team == dept %}selected{% endif %}>{{ dept }}</option>
                 {% endif %}
             {% endfor %}
-        </select><br>
+        </select>
+    </label><br><br>
 
-        상태:
+    <label>상태:
         <select name="status" required>
-            <option value="대기중" {% if task.status == "대기중" %}selected{% endif %}>대기중</option>
-            <option value="진행중" {% if task.status == "진행중" %}selected{% endif %}>진행중</option>
-            <option value="완료" {% if task.status == "완료" %}selected{% endif %}>완료</option>
-        </select><br>
+            <option value="대기중" {% if task.status == '대기중' %}selected{% endif %}>대기중</option>
+            <option value="진행중" {% if task.status == '진행중' %}selected{% endif %}>진행중</option>
+            <option value="완료" {% if task.status == '완료' %}selected{% endif %}>완료</option>
+        </select>
+    </label><br><br>
 
-        우선순위:
-        <select name="priority">
-            <option value="낮음" {% if task.priority == "낮음" %}selected{% endif %}>낮음</option>
-            <option value="보통" {% if task.priority == "보통" %}selected{% endif %}>보통</option>
-            <option value="높음" {% if task.priority == "높음" %}selected{% endif %}>높음</option>
-        </select><br>
+    <label>우선순위:
+        <select name="priority" required>
+            <option value="낮음" {% if task.priority == '낮음' %}selected{% endif %}>낮음</option>
+            <option value="보통" {% if task.priority == '보통' %}selected{% endif %}>보통</option>
+            <option value="높음" {% if task.priority == '높음' %}selected{% endif %}>높음</option>
+        </select>
+    </label><br><br>
 
-        마감일:
-        <input
-            type="date"
-            id="due_date_input"
-            name="due_date"
-            value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}"
-            {% if not task.due_date %}disabled{% endif %}
-            required
-        >
-        <label>
-            <input type="checkbox" id="no_due_date_checkbox" name="no_due_date"
-                {% if not task.due_date %}checked{% endif %}
-            > 마감일 미정
-        </label>
-        <br>
+    <label>마감일:
+        <input type="date" name="due_date" id="due_date_input"
+            {% if task.due_date %} value="{{ task.due_date.strftime('%Y-%m-%d') }}" {% endif %}
+            {% if not task.due_date %} disabled {% endif %}>
+        <input type="checkbox" name="no_due_date" id="no_due_date_checkbox" {% if not task.due_date %}checked{% endif %}>
+        <label for="no_due_date_checkbox">미정</label>
+    </label><br><br>
 
-        <script>
-            const checkbox = document.getElementById('no_due_date_checkbox');
-            const dateInput = document.getElementById('due_date_input');
+    <label>첨부파일:
+    <input type="file" name="file" id="file_input">
+    <br><br>
+    <span id="fileNameDisplay">
+        {% if task.file_name %}
+            현재 파일: {{ task.file_name }}
+        {% else %}
+            파일 없음
+        {% endif %}
+    </span>
+</label><br><br>
 
-            checkbox.addEventListener('change', function () {
-                dateInput.disabled = this.checked;
-                if (this.checked) {
-                    dateInput.value = '';
-                }
-            });
-        </script>
+    <button type="submit">수정 완료</button>
+    <a href="{{ url_for('task.home') }}">돌아가기</a>
+</form>
 
-        첨부파일 변경: <input type="file" name="file"><br>
+<script>
+    const checkbox = document.getElementById('no_due_date_checkbox');
+    const dateInput = document.getElementById('due_date_input');
+    const fileInput = document.getElementById('file_input');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        <button type="submit">수정 완료</button>
-    </form>
+    checkbox.addEventListener('change', function () {
+        dateInput.disabled = this.checked;
+        if (this.checked) {
+            dateInput.value = '';
+        }
+    });
+
+    fileInput.addEventListener('change', function () {
+        if (fileInput.files.length > 0) {
+            const newFileName = fileInput.files[0].name;
+            const original = fileNameDisplay.innerText.includes("현재 파일:")
+                ? fileNameDisplay.innerText
+                : "";
+        } else {
+            fileNameDisplay.innerHTML = `파일 없음`;
+        }
+    });
+</script>
 {% endblock %}
