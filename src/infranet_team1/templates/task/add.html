@@ -37,6 +37,13 @@
                 {% endif %}
             {% endfor %}
         </select><br>
+        
+        우선순위:
+        <select name="priority">
+            <option value="낮음">낮음</option>
+            <option value="보통">보통</option>
+            <option value="높음">높음</option>
+        </select><br>
 
         상태:
         <select name="status" required>
@@ -44,13 +51,6 @@
             <option value="대기중">대기중</option>
             <option value="진행중">진행중</option>
             <option value="완료">완료</option>
-        </select><br>
-
-        우선순위:
-        <select name="priority">
-            <option value="낮음">낮음</option>
-            <option value="보통">보통</option>
-            <option value="높음">높음</option>
         </select><br>
 
         마감일:

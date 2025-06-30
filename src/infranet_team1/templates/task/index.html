@@ -22,28 +22,29 @@
     <form method="GET" action="{{ url_for('task.home') }}">
         팀:
         <select name="team">
-            <option value="" {% if not request.args.get('team') %}selected{% endif %}>전체</option>
+            <option value="" {% if filter_reset or not request.args.get('team') %}selected{% endif %}>전체</option>
             {% for dept in departments %}
                 {% if dept.strip() %}
-                    <option value="{{ dept }}" {% if request.args.get('team') == dept %}selected{% endif %}>{{ dept }}</option>
+                    <option value="{{ dept }}" {% if not filter_reset and request.args.get('team') == dept %}selected{% endif %}>{{ dept }}</option>
                 {% endif %}
             {% endfor %}
         </select>
 
         상태:
         <select name="status">
-            <option value="전체" {% if request.args.get('status') == '전체' or not request.args.get('status') %}selected{% endif %}>전체</option>
-            <option value="대기중" {% if request.args.get('status') == '대기중' %}selected{% endif %}>대기중</option>
-            <option value="진행중" {% if request.args.get('status') == '진행중' %}selected{% endif %}>진행중</option>
-            <option value="완료" {% if request.args.get('status') == '완료' %}selected{% endif %}>완료</option>
+            <option value="" {% if filter_reset or not request.args.get('status') %}selected{% endif %}>전체</option>
+            <option value="대기중" {% if not filter_reset and request.args.get('status') == '대기중' %}selected{% endif %}>대기중</option>
+            <option value="진행중" {% if not filter_reset and request.args.get('status') == '진행중' %}selected{% endif %}>진행중</option>
+            <option value="완료" {% if not filter_reset and request.args.get('status') == '완료' %}selected{% endif %}>완료</option>
         </select>
 
         기간:
-        <input type="date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+        <input type="date" name="start_date" value="{% if not filter_reset %}{{ request.args.get('start_date', '') }}{% endif %}">
         ~
-        <input type="date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+        <input type="date" name="end_date" value="{% if not filter_reset %}{{ request.args.get('end_date', '') }}{% endif %}">
 
         <button type="submit">검색</button>
+        <a href="{{ url_for('task.home') }}" style="margin-left:10px;">초기화</a>
     </form>
 
     <a href="{{ url_for('task.add_get') }}">+ 업무 추가</a>
@@ -53,8 +54,8 @@
             <tr>
                 <th>제목</th>
                 <th>팀</th>
-                <th>상태</th>
                 <th>우선순위</th>
+                <th>상태</th>
                 <th>마감일</th>
                 <th>첨부파일</th>
                 <th>수정/삭제</th>
@@ -65,8 +66,8 @@
             <tr>
                 <td>{{ task.title }}</td>
                 <td>{{ task.team }}</td>
-                <td>{{ task.status }}</td>
                 <td>{{ task.priority }}</td>
+                <td>{{ task.status }}</td>
                 <td>
                     {% if task.due_date %}
                         {% set due_date = task.due_date.date() %}
@@ -88,16 +89,17 @@
                 </td>
 
                 <td>
-                    {% if task.file_id %}
-                        <a href="{{ url_for('file_download', file_id=task.file_id) }}">다운로드</a>
+                    {% if task.file_id and task.file_name %}
+                        <a href="{{ url_for('file_download', file_id=task.file_id) }}">{{ task.file_name }}</a>
                     {% else %}
                         없음
                     {% endif %}
                 </td>
+
                 <td>
-                    <a href="{{ url_for('task.edit_get', task_id=task._id) }}">수정</a>
-                    <form action="{{ url_for('task.delete', task_id=task._id) }}" method="POST" style="display:inline;">
-                        <button type="submit" onclick="return confirm('정말 삭제할까요?')">삭제</button>
+                    <a href="{{ url_for('task.edit_get', task_id=task._id) }}">수정</a> |
+                    <form action="{{ url_for('task.delete', task_id=task._id) }}" method="POST" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                        <button type="submit">삭제</button>
                     </form>
                 </td>
             </tr>
