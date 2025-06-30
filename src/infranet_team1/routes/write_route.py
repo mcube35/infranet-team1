@@ -202,7 +202,6 @@ def edit_form(post_id):
     if not post:
         abort(404)
 
-    # 권한 체크
     is_author = post["author_id"] == ObjectId(current_user.id)
     is_admin = getattr(current_user, "role", "") in ["admin", "system"]
     if not (is_author or is_admin):
@@ -218,7 +217,6 @@ def edit_post(post_id):
     if not post:
         abort(404)
 
-    # 권한 체크
     is_author = post["author_id"] == ObjectId(current_user.id)
     is_admin = getattr(current_user, "role", "") in ["admin", "system"]
     if not (is_author or is_admin):
@@ -226,9 +224,10 @@ def edit_post(post_id):
 
     title = request.form.get("title")
     content = request.form.get("content")
+    category = request.form.get("category")
 
-    if not title or not content:
-        return "제목과 내용을 입력하세요.", 400
+    if not title or not content or not category:
+        return "제목, 내용, 카테고리를 입력하세요.", 400
 
     get_posts_collection().update_one(
         {"_id": ObjectId(post_id)},
@@ -236,11 +235,13 @@ def edit_post(post_id):
             "$set": {
                 "title": title,
                 "content": content,
+                "category": category,
                 "updated_at": datetime.datetime.utcnow()
             }
         }
     )
     return redirect(url_for("write.detail", post_id=post_id))
+
 
 
 # 게시글 삭제 POST처리
