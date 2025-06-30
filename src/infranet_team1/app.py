@@ -43,7 +43,7 @@ app.config.update(
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 
 login_manager = LoginManager(app)
-login_manager.login_view = "auth.login"
+login_manager.login_view = "auth.login_get"
 login_manager.session_protection = "strong"
 
 @login_manager.user_loader
