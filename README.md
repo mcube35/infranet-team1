@@ -11,8 +11,6 @@ MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습�
 파일구조도 그렇게 깔끔하지않은데 이부분도 고민해봐야 할 것 같습니다.
 추가적으로 fast api가 비동기를 지원하고, pydentic도 번거롭지않아보여서 flask보단 fast api가 맘에 들어서 이걸 쓸 예정입니다.
 
-![다이어그램](./docs/diagram.drawio.png)
-
 ---
 
 # 기술 스택
@@ -20,7 +18,15 @@ MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습�
 - **Backend**: Python 3.10.11, Flask, PyMongo  
 - **Frontend**: Jinja2 Template, HTML/CSS  
 - **DB**: MongoDB  
-- **패키지 관리**: Poetry  
+- **패키지 관리**: Poetry
+
+---
+
+### 아키텍쳐 다이어그램
+![아키텍쳐 다이어그램](./docs/Architecture_Diagram.svg)
+
+### ERD
+![ERD](./docs/ERD.svg)
 
 ---
 
