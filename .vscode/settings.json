@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./src/infranet_team1"
+    ]
+}

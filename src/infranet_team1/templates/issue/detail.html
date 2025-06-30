@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}이슈 상세 - {{ issue.title }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>이슈 상세 정보</h1>
+
+        <div>
+            <strong>제목:</strong> {{ issue.title }}
+        </div>
+        <div>
+            <strong>내용:</strong> {{ issue.description }}
+        </div>
+        <div>
+            <strong>진행상태:</strong> {{ issue.status }}
+        </div>
+        <div>
+            <strong>고객사:</strong> {{ issue.client_company_name_display }}
+            {% if issue.client_company_id_str and issue.client_company_id_str|length >= 6 %}
+                <span style="font-size: 0.8em; color: #888;">
+                    ({{ issue.client_company_id_str[:3] }}...{{ issue.client_company_id_str[-3:] }})
+                </span>
+            {% endif %}
+
+        </div>
+        <div>
+            <strong>작성자:</strong> {{ issue.reporter_name_display }}
+        </div>
+        <div>
+            <strong>담당자:</strong> {{ issue.assigned_to_str }}
+        </div>
+        <div>
+            <strong>작성일:</strong> {{ issue.created_at_str }}
+        </div>
+        <div>
+            <strong>최종 수정일:</strong> {{ issue.updated_at_str }}
+        </div>
+
+        {# 상태 변경 폼 #}
+        <form id="statusUpdateForm" action="{{ url_for('issue.update_status', family_name=current_family, issue_id=issue.mongo_id) }}" method="post">
+            <label for="new_status">상태 변경:</label>
+            <select name="new_status" id="new_status">
+                <option value="신규" {% if issue.status == '신규' %}selected{% endif %}>신규</option>
+                <option value="진행중" {% if issue.status == '진행중' %}selected{% endif %}>진행중</option>
+                <option value="해결됨" {% if issue.status == '해결됨' %}selected{% endif %}>해결됨</option>
+            </select>
+            <button type="submit">변경</button>
+        </form>
+
+        <div class="button-group">
+            {# 수정 링크 #}
+            <a href="{{ url_for('issue.edit_get', family_name=current_family, issue_id=issue.mongo_id) }}">수정</a>
+            
+            {# 삭제 폼 (POST 요청) - 기능적 목적을 위해 display:inline 유지 #}
+            <form action="{{ url_for('issue.delete', family_name=current_family, issue_id=issue.mongo_id) }}" method="post" style="display:inline;" onsubmit="return confirm('이 게시글을 정말 삭제하시겠습니까?');">
+                <button type="submit">삭제</button>
+            </form>
+
+            {# 목록으로 돌아가기 링크 #}
+            <a href="{{ url_for('issue.show_list', family_name=current_family) }}">목록으로 돌아가기</a>
+        </div>
+
+    </div>
+{% endblock %}

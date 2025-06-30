@@ -1,11 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>커뮤니티 메인화면</title>
-</head>
-<body>
-    <h1>커뮤니티 메인화면</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}게시글 목록 - 커뮤니티{% endblock %}
+
+{% block content %}
+<div class="container" style="display: flex;">
+    <!-- 왼쪽 사이드바: 카테고리 -->
+    <aside class="sidebar" style="width: 200px; padding: 10px; border-right: 1px solid #ddd;">
+        <h3>카테고리</h3>
+        <select id="categorySelect" style="width: 100%; padding: 5px;">
+            <option value="{{ url_for('write.home') }}" {% if not request.args.get('category') %}selected{% endif %}>전체보기</option>
+            <option value="{{ url_for('write.home', category='free') }}" {% if request.args.get('category') == 'free' %}selected{% endif %}>자유게시판</option>
+            <option value="{{ url_for('write.home', category='qna') }}" {% if request.args.get('category') == 'qna' %}selected{% endif %}>질문과 답변</option>
+            <option value="{{ url_for('write.home', category='notice') }}" {% if request.args.get('category') == 'notice' %}selected{% endif %}>공지사항</option>
+        </select>
+    </aside>
+
+<script>
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        const url = this.value;
+        window.location.href = url;
+    });
+</script>
+
+    <!-- 오른쪽 메인 콘텐츠 -->
+    <main class="content" style="flex: 1; padding: 10px;">
+        <h2>게시글 목록</h2>
+
+        <form method="GET" action="{{ url_for('write.home') }}">
+            <input type="text" name="q" placeholder="검색어를 입력하세요" value="{{ request.args.get('q', '') }}">
+            <button type="submit">검색</button>
+            <!-- 카테고리 유지하려면 히든 필드 추가 -->
+            {% if request.args.get('category') %}
+            <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+            {% endif %}
+        </form>
+
+        {% if posts %}
+        <ul class="post-list">
+            {% for post in posts %}
+            <li>
+                <a href="{{ url_for('write.detail', post_id=post._id) }}">{{ post.title }}</a>
+                <br>
+                <small>
+                    📂 카테고리:
+                    {% if post.category == "notice" %}
+                        공지
+                    {% elif post.category == "free" %}
+                        자유
+                    {% elif post.category == "qna" %}
+                        질의응답
+                    {% else %}
+                        기타
+                    {% endif %}
+                    | ✍️ {{ author_map[post.author_id] }}
+                    | 🕒 {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </small>
+            </li>
+            {% endfor %}
+        </ul>
+
+        {% else %}
+        <p>게시글이 없습니다.</p>
+        {% endif %}
+        
+        <!-- 게시글 목록 하단에 새글 작성 버튼 추가 -->
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('write.write_form') }}" class="btn btn-primary">새글 작성하기</a>
+        </div>
+    </main>
+    <!-- 통계 패널 -->
+    <section class="statistics" style="flex: 1; padding: 10px; background-color: #f9f9f9; border-left: 1px solid #ccc;">
+        <h3>📊 활동 순위</h3>
+        <ul>
+            {% for user_name, count in top_users %}
+            <li>{{ user_name }} - {{ count }}회</li>
+            {% endfor %}
+        </ul>
+    </section>
+    </div>
+</div>
+{% endblock %}

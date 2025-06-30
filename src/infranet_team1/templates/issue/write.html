@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}새 게시글 작성{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>새 게시글 작성 ({{ current_family | capitalize }} 이슈)</h1>
+
+    <form id="postForm" method="POST" action="{{ url_for('issue.write_post', family_name=current_family) }}" onsubmit="return validateForm()">
+        <div>
+            <label for="clientSearchInput">고객사:</label>
+            {# 여기에 name 속성 추가: 선택된 고객사 이름이 폼 데이터로 전송됩니다. #}
+            <input type="text" id="clientSearchInput" name="client_company_name_for_display" placeholder="고객사 이름 또는 ID 검색 (필수)" autocomplete="off" required/> 
+            {# 추가: 선택된 고객사의 ID를 서버로 넘기기 위한 숨겨진 필드 (이건 DB 처리를 위해 필요) #}
+            <input type="hidden" id="hiddenClientCompanyId" name="client_company_id" /> 
+            
+            <span id="selectedClientNameDisplay" class="selected-client" style="margin-left: 10px; font-weight: bold; color: green;"></span>
+            <ul id="clientSuggestions" class="suggestion-list"></ul>
+        </div>
+
+        <div>
+            <label for="postTitle">제목:</label>
+            <input type="text" id="postTitle" name="title" placeholder="게시글 제목을 입력하세요" required />
+        </div>
+
+        <div>
+            <label for="postContent">내용:</label>
+            <textarea id="postContent" name="description" placeholder="게시글 내용을 작성하세요" rows="8" required></textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="submit">작성</button>
+            <a href="{{ url_for('issue.show_list', family_name=current_family) }}">취소</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('postForm');
+    const clientInput = document.getElementById('clientSearchInput');
+    const clientIdHidden = document.getElementById('hiddenClientCompanyId');
+    const clientList = document.getElementById('clientSuggestions');
+    const clientDisplay = document.getElementById('selectedClientNameDisplay');
+    const postTitleInput = document.getElementById('postTitle');
+    const postContentTextarea = document.getElementById('postContent');
+
+    function validateForm() {
+        if (!postTitleInput.checkValidity()) {
+            postTitleInput.reportValidity();
+            return false;
+        }
+        if (!postContentTextarea.checkValidity()) {
+            postContentTextarea.reportValidity();
+            return false;
+        }
+
+        if (!clientIdHidden.value.trim()) {
+            clientInput.setCustomValidity('고객사를 선택해주세요.');
+            clientInput.reportValidity();
+            clientInput.focus();
+            return false;
+        } else {
+            clientInput.setCustomValidity(''); 
+        }
+        
+        return true;
+    }
+
+    // 고객사 자동 검색
+    let searchTimeout;
+    clientInput.addEventListener('keyup', () => {
+        clearTimeout(searchTimeout);
+        const term = clientInput.value.trim();
+
+        clientInput.setCustomValidity('');
+
+        if (!term) {
+            clientList.style.display = 'none';
+            clientIdHidden.value = ''; // 숨겨진 필드 값 초기화
+            clientDisplay.innerText = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch('{{ url_for("issue.search_client") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ search_term: term })
+            })
+            .then(res => res.json())
+            .then(data => {
+                clientList.innerHTML = '';
+                if (data.length) {
+                    data.forEach(client => {
+                        const li = document.createElement('li');
+                        li.innerText = `${client.name} (${client.id})`;
+                        li.style.padding = '8px';
+                        li.style.cursor = 'pointer';
+                        li.style.borderBottom = '1px solid #eee';
+
+                        li.onclick = () => {
+                            clientInput.value = client.name; // 보이는 입력 필드에 고객사 이름 설정
+                            clientIdHidden.value = client.id; // 숨겨진 필드에 고객사 ID 설정
+                            clientDisplay.innerText = '';
+                            clientList.style.display = 'none';
+                            clientInput.setCustomValidity('');
+                        };
+                        clientList.appendChild(li);
+                    });
+                } else {
+                    clientList.innerHTML = '<li style="color:#888; padding: 8px;">검색 결과 없음</li>';
+                }
+                clientList.style.display = 'block';
+            })
+            .catch(console.error);
+        }, 300);
+    });
+
+    clientInput.addEventListener('blur', () => {
+        setTimeout(() => clientList.style.display = 'none', 200);
+    });
+    clientList.addEventListener('mousedown', e => e.preventDefault());
+</script>
+{% endblock %}

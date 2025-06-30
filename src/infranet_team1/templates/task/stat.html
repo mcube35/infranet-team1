@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}업무 통계{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-around;">
+  <div>
+    <h2>마감일 기준 상태별 업무 통계</h2>
+    <canvas id="dateChart" height="400"></canvas>
+  </div>
+  <div>
+    <h2>팀별 업무 상태 분포</h2>
+    <canvas id="teamChart" height="400"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  function createStackedBarChart({canvasId, apiUrl, chartTitle}) {
+    fetch(apiUrl)
+      .then(res => res.json())
+      .then(data => {
+        const labels = Object.keys(data);
+        const allStatuses = new Set();
+        labels.forEach(label => Object.keys(data[label]).forEach(s => allStatuses.add(s)));
+        const statuses = [...allStatuses];
+
+        const datasets = statuses.map((status, i) => ({
+          label: status,
+          data: labels.map(label => data[label][status] || 0),
+        }));
+
+        new Chart(document.getElementById(canvasId), {
+          type: 'bar',
+          data: { labels, datasets },
+          options: {
+            responsive: false,
+            plugins: { title: { display: true, text: chartTitle } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+          }
+        });
+      });
+  }
+
+  createStackedBarChart({
+    canvasId: 'dateChart',
+    apiUrl: "{{ url_for('task.chart_data') }}",
+    chartTitle: '마감일 기준 상태별 업무 통계'
+  });
+
+  createStackedBarChart({
+    canvasId: 'teamChart',
+    apiUrl: "{{ url_for('task.chart_by_team_api') }}",
+    chartTitle: '팀별 업무 상태 분포'
+  });
+});
+</script>
+{% endblock %}

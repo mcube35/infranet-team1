@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}고객사 등록{% endblock %}
+
+{% block content %}
+<h1>고객사 등록</h1>
+
+<form method="post" enctype="multipart/form-data">
+  <fieldset>
+    <legend>기본 정보</legend>
+    <p><label>고객사명:</label><br><input type="text" name="company_name" required></p>
+    <p><label>부서:</label><br><input type="text" name="department" required></p>
+    <p><label>담당자명:</label><br><input type="text" name="contact_person"></p>
+    <p><label>전화번호:</label><br><input type="text" name="phone"></p>
+    <p><label>이메일:</label><br><input type="email" name="email"></p>
+    <p><label>기술 스택 (쉼표 구분):</label><br><input type="text" name="tech_stack"></p>
+    <p><label>비고:</label><br><textarea name="notes" rows="3"></textarea></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>계약 정보</legend>
+    <p><label>계약 상태:</label>
+      <select name="contract_status">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </p>
+    <p><label>계약 시작일:</label><input type="date" name="contract_start_date" required></p>
+    <p><label>계약 종료일:</label><input type="date" name="contract_end_date" required></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>계약서 파일</legend>
+    <p>
+      <label>계약서 업로드 (여러 개):</label><br>
+      <input type="file" name="contract_files" multiple>
+    </p>
+  </fieldset>
+
+  <fieldset>
+    <legend>첨부 파일</legend>
+    <p><label>파일 업로드:</label><br><input type="file" name="attachments" multiple></p>
+  </fieldset>
+
+  <button type="submit">등록</button>
+  <a href="{{ url_for('client.show_list') }}">취소</a>
+</form>
+{% endblock %}
