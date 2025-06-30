@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - 커뮤니티{% endblock %}
+
+{% block content %}
+<div class="container" style="display: flex;">
+    <!-- 🔹 이전화면으로 돌아가기 링크 -->
+    <aside class="sidebar" style="width: 200px; margin-right: 20px;">
+        <a href="{{ url_for('write.home') }}" style="font-weight: bold; display: block; margin-bottom: 10px;">
+            ← 목록으로
+        </a>
+    </aside>
+
+    {% set is_post_author = (post.author_id|string == current_user.id) %}
+    {% set is_admin = current_user.role in ['admin', 'system'] %}
+
+    <!-- 🔸 오른쪽 본문: 게시글 상세 및 댓글 -->
+    <main style="flex: 1;">
+        <article class="post-detail">
+            <h2>{{ post.title }}</h2>
+            <p class="meta">
+                작성자: {{ user_name }} | 작성일: {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+                {% if post.updated_at %}
+                | 수정일: {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                {% endif %}
+            </p>
+            <div class="content">
+                <pre>{{ post.content }}</pre>
+            </div>
+
+
+            {% if is_post_author or is_admin %}
+            <div class="post-actions">
+                <a href="{{ url_for('write.edit_form', post_id=post._id) }}">수정</a>
+                <form method="POST" action="{{ url_for('write.delete', post_id=post._id) }}" style="display:inline;">
+                    <button type="submit" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+                </form>
+            </div>
+            {% endif %}
+        </article>
+
+        <hr>
+
+        <section class="comments">
+            <h3>댓글 ({{ post.comments | length }})</h3>
+            {% if post.comments %}
+            <ul>
+                {% for comment in post.comments %}
+                <li>
+                    {% set is_comment_author = (comment.author_id|string == current_user.id) %}
+
+                    <b>{{ author_map[comment.author_id] if comment.author_id in author_map else '알 수 없음' }}</b>
+                    <small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    <pre class="small_ui">{{ comment.content }}</pre>
+
+                    {% if is_comment_author or is_post_author or is_admin %}
+                    <form method="POST" action="{{ url_for('write.delete_comment', post_id=post._id) }}" style="display:inline;">
+                        <input type="hidden" name="comment_id" value="{{ comment.comment_id }}">
+                        <button type="submit" class="small_ui" onclick="return confirm('댓글을 삭제하시겠습니까?')">댓글 삭제</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>댓글이 없습니다.</p>
+            {% endif %}
+
+            <hr>
+
+            <h4>댓글 작성</h4>
+            <form method="POST" action="{{ url_for('write.add_comment', post_id=post._id) }}">
+                <label>내용:<br/>
+                    <textarea name="comment_content" rows="4" required></textarea>
+                </label><br/>
+                <button type="submit">댓글 등록</button>
+            </form>
+        </section>
+    </main>
+</div>
+{% endblock %}

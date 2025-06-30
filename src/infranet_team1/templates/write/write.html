@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if post %}글 수정{% else %}글쓰기{% endif %} - 커뮤니티
+{% endblock %}
+
+{% block content %}
+
+<h2>{% if post %}글 수정{% else %}글쓰기{% endif %}</h2>
+
+<form method="POST">
+    <label>작성자: {{ current_user.name }}</label>
+    <br/><br/>
+
+    <label>카테고리:
+        <select name="category" required>
+            <option value="free" {% if post and post['category'] == 'free' %}selected{% endif %}>자유게시판</option>
+            <option value="qna" {% if post and post['category'] == 'qna' %}selected{% endif %}>질문과 답변</option>
+            <option value="notice" {% if post and post['category'] == 'notice' %}selected{% endif %}>공지사항</option>
+        </select>
+    </label>
+    <br/><br/>
+
+    <label>제목:
+        <input type="text" name="title" value="{{ post['title'] if post else '' }}" required />
+    </label>
+    <br/><br/>
+
+    <label>내용:<br/>
+        <textarea name="content" rows="10" required>{{ post['content'].strip() if post else '' }}</textarea>
+    </label>
+    <br/><br/>
+
+    <button type="submit">{% if post %}수정{% else %}작성{% endif %}</button>
+</form>
+
+{% endblock %}

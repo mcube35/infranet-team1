@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}계약서 상세보기{% endblock %}
+
+{% block content %}
+<h1>계약서 상세보기</h1>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>고객사 ID</th>
+        <td>{{ client_doc._id }}</td>
+    </tr>
+    <tr>
+        <th>사명</th>
+        <td>{{ client_doc.company_name }}</td>
+    </tr>
+    <tr>
+        <th>부서</th>
+        <td>{{ client_doc.department }}</td>
+    </tr>
+    <tr>
+        <th>담당자</th>
+        <td>{{ client_doc.contact_person or '없음' }}</td>
+    </tr>
+    <tr>
+        <th>연락처</th>
+        <td>{{ client_doc.phone or '없음' }}</td>
+    </tr>
+    <tr>
+        <th>이메일</th>
+        <td>{{ client_doc.email or '없음' }}</td>
+    </tr>
+    <tr>
+        <th>필요 기술스택</th>
+        <td>
+            {% if client_doc.tech_stack %}
+                {{ client_doc.tech_stack | join(', ') }}
+            {% else %}
+                없음
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>계약일</th>
+        <td>
+            {% if client_doc.contract.start_date %}
+                {{ client_doc.contract.start_date.strftime('%Y-%m-%d') }}
+            {% else %}
+                없음
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>만료일</th>
+        <td>
+            {% if client_doc.contract.end_date %}
+                {{ client_doc.contract.end_date.strftime('%Y-%m-%d') }}
+            {% else %}
+                없음
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>계약 상태</th>
+        <td>{{ client_doc.contract.status or '없음' }}</td>
+    </tr>
+    <tr>
+        <th>특이사항 / 요구사항</th>
+        <td>{{ client_doc.notes or '없음' }}</td>
+    </tr>
+    <tr>
+    <tr>
+    <th>계약서 파일</th>
+        <td>
+            {% if client_doc.contract_files %}
+                <ul>
+                    {% for file in client_doc.contract_files %}
+                        {% set name = file.file_name %}
+                        <li>
+                            {% if name|length > 25 %}
+                                {{ name[:15] }}...{{ name[-5:] }}
+                            {% else %}
+                                {{ name }}
+                            {% endif %}
+                            [
+                            <a href="{{ url_for('file_download', file_id=file.file_id) }}">다운로드</a>
+                            |
+                            <a href="{{ url_for('client.file_preview', file_id=file.file_id) }}" target="_blank">미리보기</a>
+                            ]
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                첨부된 계약서 없음
+            {% endif %}
+        </td>
+    </tr>
+
+    <tr>
+        <th>기타 첨부파일</th>
+        <td>
+            {% if client_doc.attachments %}
+                <ul>
+                    {% for file in client_doc.attachments %}
+                        {% set name = file.file_name %}
+                        <li>
+                            <a href="{{ url_for('file_download', file_id=file.file_id) }}" title="{{ name }}">
+                                {% if name|length > 25 %}
+                                    {{ name[:15] }}...{{ name[-5:] }}
+                                {% else %}
+                                    {{ name }}
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                없음
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+<p>
+    <a href="{{ url_for('client.show_list') }}">[목록으로]</a> |
+    <a href="{{ url_for('client.edit_form', id=client_doc._id) }}">[수정]</a> |
+    <form method="post" action="{{ url_for('client.delete', id=client_doc._id) }}" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+        <button type="submit">삭제</button>
+    </form>
+</p>
+{% endblock %}

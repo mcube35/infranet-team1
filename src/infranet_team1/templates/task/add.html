@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+<!-- Flash 메시지 표시 영역 -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div style="margin-bottom: 1em;">
+            {% for msg in messages %}
+                <div style="padding: 10px; border: 1px solid #ccc; background-color: #f8f9fa; color: #333; border-radius: 6px;">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% block title %}업무 추가{% endblock %}
+
+{% block content %}
+    <h1>업무 등록</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('task.add_get') }}">
+        제목: <input type="text" name="title" required><br>
+
+        팀:
+        <select name="team" required>
+            <option value="">-- 팀 선택 --</option>
+            {% for dept in departments %}
+                {% if dept.strip() %}
+                    <option value={{dept}}>{{dept}}</option>
+                {% endif %}
+            {% endfor %}
+        </select><br>
+
+        상태:
+        <select name="status" required>
+            <option value="">-- 상태 선택 --</option>
+            <option value="대기중">대기중</option>
+            <option value="진행중">진행중</option>
+            <option value="완료">완료</option>
+        </select><br>
+
+        우선순위:
+        <select name="priority">
+            <option value="낮음">낮음</option>
+            <option value="보통">보통</option>
+            <option value="높음">높음</option>
+        </select><br>
+
+        마감일:
+        <input type="date" id="due_date_input" name="due_date" required>
+        <label>
+            <input type="checkbox" id="no_due_date_checkbox" name="no_due_date"> 마감일 미정
+        </label>
+        <br>
+
+        <script>
+            const checkbox = document.getElementById('no_due_date_checkbox');
+            const dateInput = document.getElementById('due_date_input');
+
+            checkbox.addEventListener('change', function () {
+                dateInput.disabled = this.checked;
+                if (this.checked) {
+                    dateInput.removeAttribute('required');
+                    dateInput.value = '';
+                } else {
+                    dateInput.setAttribute('required', 'required');
+                }
+            });
+        </script>
+
+        첨부파일: <input type="file" name="file"><br>
+
+        <button type="submit">등록</button>
+    </form>
+{% endblock %}

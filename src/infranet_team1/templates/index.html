@@ -1,31 +1,7 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>메인 메뉴</title>
-</head>
-<body>
-    <h1>메인 메뉴</h1>
+{% extends "base.html" %}
 
-    <hr>
+{% block title %}홈페이지{% endblock %}
 
-    {% if current_user.is_authenticated %}
-        <p>안녕하세요, {{ current_user.name }}님! 권한: {{ current_user.role }}</p>
-        <ul>
-            <li><a href="{{ url_for('issue.home') }}">이슈</a></li>
-            <li><a href="{{ url_for('write.home') }}">커뮤니티</a></li>
-            <li><a href="{{ url_for('task.home') }}">업무 관리</a></li>
-            <li><a href="{{ url_for('client.home') }}">고객 관리</a></li>
-            <li><a href="{{ url_for('hr.home') }}">인사 관리</a></li>
-            {% if current_user.role == 'admin' %}
-                <li><a href="{{ url_for('auth.register_form') }}">계정 등록</a></li>
-            {% endif %}
-        </ul>
-
-        <p><a href="{{ url_for('auth.logout') }}">로그아웃</a></p>
-    {% else %}
-        <p>비회원입니다. <a href="{{ url_for('auth.login_get') }}">로그인</a></p>
-    {% endif %}
-</body>
-</html>
+{% block content %}
+  <h1>환영합니다 {{ current_user.name }}님!</h1>
+{% endblock %}

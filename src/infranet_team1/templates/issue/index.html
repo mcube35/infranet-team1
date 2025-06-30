@@ -1,11 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이슈 메인화면</title>
-</head>
-<body>
-    <h1>이슈 메인화면</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}이슈 모음집{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="content-sections">
+        {# issues_by_family_and_status 딕셔너리에는 display_family_name만 키로 있습니다.
+           family_categories 딕셔너리를 사용하여 display_family_name에 해당하는 db_family_prefix를 가져옵니다. #}
+        {% for display_family_name, statuses_data in issues_by_family_and_status.items() %}
+        <article class="content-card {{ display_family_name | lower | replace(' ', '-') }}">
+            <div class="pin"></div>
+            <h2>
+                {# 'family_categories' 맵을 사용하여 display_family_name에 해당하는 정확한 family_name (backend, frontend, ui)을 가져옵니다. #}
+                <a href="{{ url_for('issue.show_list', family_name=family_categories[display_family_name]) }}">{{ display_family_name }}</a>
+            </h2>
+            
+            {# 각 "가족" 내부의 상태(신규, 진행중, 퇴마됨)별로 반복합니다. #}
+            {% for display_status_name, issue_list in statuses_data.items() %}
+            <div class="issue-category">
+                <h3>{{ display_status_name }}</h3>
+                <ul class="issue-list">
+                    {% for issue in issue_list %}
+                    {# 상세 페이지 URL에도 issue.family_name (예: backend)을 전달합니다. #}
+                    <li><a href="{{ url_for('issue.detail', family_name=issue.family_name, issue_id=issue.mongo_id) }}">{{ issue.title }}</a></li>
+                    {% else %}
+                    <li>게시글이 없습니다.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </article>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>계정 등록</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}계정 등록{% endblock %}
+
+{% block content %}
     <h1>계정 등록</h1>
 
     <hr>
@@ -44,9 +41,4 @@
 
         <button type="submit">등록</button>
     </form>
-
-    <hr>
-
-    <a href="{{ url_for('home') }}">메인으로</a>
-</body>
-</html>
+{% endblock %}

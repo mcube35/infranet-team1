@@ -1,11 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>업무관리 메인화면</title>
-</head>
-<body>
-    <h1>업무관리 메인화면</h1>
-</body>
-</html>
+{% extends "base.html" %}
+<!-- Flash 메시지 표시 영역 -->
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div style="margin-bottom: 1em;">
+            {% for msg in messages %}
+                <div style="padding: 10px; border: 1px solid #ccc; background-color: #f8f9fa; color: #333; border-radius: 6px;">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{% block title %}업무 조회{% endblock %}
+
+{% block content %}
+    <h1>전체/팀별 업무 현황</h1>
+    
+    <a href="{{ url_for('task.stat') }}">📈 업무 통계 보기</a>
+
+    <form method="GET" action="{{ url_for('task.home') }}">
+        팀:
+        <select name="team">
+            <option value="" {% if not request.args.get('team') %}selected{% endif %}>전체</option>
+            {% for dept in departments %}
+                {% if dept.strip() %}
+                    <option value="{{ dept }}" {% if request.args.get('team') == dept %}selected{% endif %}>{{ dept }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+
+        상태:
+        <select name="status">
+            <option value="전체" {% if request.args.get('status') == '전체' or not request.args.get('status') %}selected{% endif %}>전체</option>
+            <option value="대기중" {% if request.args.get('status') == '대기중' %}selected{% endif %}>대기중</option>
+            <option value="진행중" {% if request.args.get('status') == '진행중' %}selected{% endif %}>진행중</option>
+            <option value="완료" {% if request.args.get('status') == '완료' %}selected{% endif %}>완료</option>
+        </select>
+
+        기간:
+        <input type="date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+        ~
+        <input type="date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+
+        <button type="submit">검색</button>
+    </form>
+
+    <a href="{{ url_for('task.add_get') }}">+ 업무 추가</a>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>제목</th>
+                <th>팀</th>
+                <th>상태</th>
+                <th>우선순위</th>
+                <th>마감일</th>
+                <th>첨부파일</th>
+                <th>수정/삭제</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.team }}</td>
+                <td>{{ task.status }}</td>
+                <td>{{ task.priority }}</td>
+                <td>
+                    {% if task.due_date %}
+                        {% set due_date = task.due_date.date() %}
+                        {% set delta = (due_date - today).days %}
+                        {% set is_done = (task.status == '완료') %}
+
+                        {% if delta == 0 %}
+                            <span style="color:green;">{{ due_date.strftime('%Y-%m-%d') }} (D-DAY)</span>
+                        {% elif delta > 0 %}
+                            <span>{{ due_date.strftime('%Y-%m-%d') }} (D-{{ delta }})</span>
+                        {% else %}
+                            <span style="{% if not is_done %}color:red;{% endif %}">
+                                {{ due_date.strftime('%Y-%m-%d') }} (D+{{ -delta }})
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color:gray;">미정</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if task.file_id %}
+                        <a href="{{ url_for('file_download', file_id=task.file_id) }}">다운로드</a>
+                    {% else %}
+                        없음
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('task.edit_get', task_id=task._id) }}">수정</a>
+                    <form action="{{ url_for('task.delete', task_id=task._id) }}" method="POST" style="display:inline;">
+                        <button type="submit" onclick="return confirm('정말 삭제할까요?')">삭제</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">등록된 업무가 없습니다.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

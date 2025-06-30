@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}휴가 신청{% endblock %}
+
+{% block content %}
+<h1>🌴 휴가 신청</h1>
+<form method="POST">
+<label>휴가 종류:</label>
+<select name="vacation_type" required>
+    <option value="연차">연차</option>
+    <option value="병가">병가</option>
+    <option value="반차">반차</option>
+</select><br><br>
+
+<label>시작일:</label>
+<input type="date" name="start_date" required><br><br>
+
+<label>종료일:</label>
+<input type="date" name="end_date" required><br><br>
+
+<label>사유:</label><br>
+<textarea name="reason" rows="4" cols="50" required></textarea><br><br>
+
+<button type="submit">신청하기</button>
+</form>
+{% endblock %}

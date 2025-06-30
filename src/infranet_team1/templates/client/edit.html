@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}고객사 수정{% endblock %}
+
+{% block content %}
+<h1>고객사 수정</h1>
+
+<form method="post"  enctype="multipart/form-data">
+  <fieldset>
+    <legend>기본 정보</legend>
+    <p><label>고객사명:</label><br><input type="text" name="company_name" value="{{ client_doc.company_name }}" required></p>
+    <p><label>부서:</label><br><input type="text" name="department" value="{{ client_doc.department }}" required></p>
+    <p><label>담당자명:</label><br><input type="text" name="contact_person" value="{{ client_doc.contact_person }}"></p>
+    <p><label>전화번호:</label><br><input type="text" name="phone" value="{{ client_doc.phone }}"></p>
+    <p><label>이메일:</label><br><input type="email" name="email" value="{{ client_doc.email }}"></p>
+    <p><label>기술 스택 (쉼표 구분):</label><br>
+      <input type="text" name="tech_stack" value="{{ client_doc.tech_stack | join(', ') }}">
+    </p>
+    <p><label>비고:</label><br><textarea name="notes" rows="3">{{ client_doc.notes }}</textarea></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>계약 정보</legend>
+    <p><label>계약 상태:</label>
+      <select name="contract_status">
+        <option value="Active" {% if client_doc.contract.status == "Active" %}selected{% endif %}>Active</option>
+        <option value="Inactive" {% if client_doc.contract.status == "Inactive" %}selected{% endif %}>Inactive</option>
+      </select>
+    </p>
+    <p><label>계약 시작일:</label>
+      <input type="date" name="contract_start_date" value="{{ client_doc.contract.start_date.strftime('%Y-%m-%d') if client_doc.contract.start_date }}">
+    </p>
+    <p><label>계약 종료일:</label>
+      <input type="date" name="contract_end_date" value="{{ client_doc.contract.end_date.strftime('%Y-%m-%d') if client_doc.contract.end_date }}">
+    </p>
+  </fieldset>
+
+  <fieldset>
+    <legend>계약서 파일 관리</legend>
+    {% if client_doc.contract_files %}
+      <ul>
+        {% for file in client_doc.contract_files %}
+          <li>
+            <a href="{{ url_for('file_download', file_id=file.file_id) }}">{{ file.file_name }}</a>
+            |
+            <a href="{{ url_for('client.file_preview', file_id=file.file_id) }}" target="_blank">미리보기</a>
+            <label>
+              <input type="checkbox" name="delete_contract_file_ids" value="{{ file.file_id }}"> 삭제
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>첨부된 계약서 없음</p>
+    {% endif %}
+    <p><label>새 계약서 업로드:</label><input type="file" name="contract_files" multiple></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>첨부파일 관리</legend>
+    {% if client_doc.attachments %}
+      <ul>
+        {% for file in client_doc.attachments %}
+          <li>
+            <a href="{{ url_for('file_download', file_id=file.file_id) }}">{{ file.file_name }}</a>
+            <label>
+              <input type="checkbox" name="delete_file_ids" value="{{ file.file_id }}">
+              삭제
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <p><label>새 첨부파일 추가:</label><input type="file" name="attachments" multiple></p>
+  </fieldset>
+
+  <button type="submit">저장</button>
+  <a href="{{ url_for('client.detail', id=client_doc._id) }}">취소</a>
+</form>
+{% endblock %}
