@@ -1,15 +1,13 @@
 # 프로젝트 설명
 
-파이썬의 Flask, pymongo 기반으로 만든 인프라넷입니다.  
-첫 프로젝트인 팀원도 많고 해서 서비스, 레포지토리 계층까지 넣기엔 무리가 있을 것 같아  
-MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습니다. 또한 .env도 번거로울거같아 넣진않았습니다
-팀원들이 각자 탭 하나씩 맡았고, 파일 이름도 직접 지었습니다.  
+파이썬의 Flask, pymongo 기반으로 만든 인프라넷입니다.
 
-### 아쉬운 점 + 앞으로의 프로젝트에서 개선할점:
-실제 프로젝트에서는 form post/get 대신 fetch를 자주 쓴다는 점을 막바지에 알게되어 아쉬웠습니다.
-앞으로는 렌더링을 최소화로 하고 fetch를 이용하여 페이지네이션, 필터링 등등 할 예정이며
-파일구조도 그렇게 깔끔하지않은데 이부분도 고민해봐야 할 것 같습니다.
-추가적으로 fast api가 비동기를 지원하고, pydentic도 번거롭지않아보여서 flask보단 fast api가 맘에 들어서 이걸 쓸 예정입니다.
+
+첫 프로젝트이신 분들도 계셔서 혼란스러워할까봐 MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습니다.
+또한 .env도 번거로울거같아 넣진않았습니다
+
+
+팀원들이 각자 탭 하나씩 맡았고, 파일 이름도 직접 지었습니다.
 
 ---
 
@@ -22,11 +20,11 @@ MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습�
 
 ---
 
-### 아키텍쳐 다이어그램
-![아키텍쳐 다이어그램](./docs/Architecture_Diagram.svg)
+### 아키텍처 다이어그램
+![아키텍처 다이어그램](./docs/architecture.png)
 
-### ERD
-![ERD](./docs/ERD.svg)
+### intranet ERD
+![intranet ERD](./docs/erd.png)
 
 ---
 
@@ -56,7 +54,6 @@ MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습�
 ## 🔐 인증
 
 - `routes/auth_route.py` : 로그인, 로그아웃 관련 라우터  
-  (회원가입은 직원정보관리에 팀원이 구현해놔서 주석처리하였습니다)  
 - `templates/auth/login.html` : 로그인 화면 페이지  
 - `templates/auth/register.html` : 회원가입 화면 페이지 (현재는 사용하지 않는 더미 페이지)  
 

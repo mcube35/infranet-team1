@@ -10,7 +10,7 @@ from db import mongo_db
 from datetime import datetime, timedelta
 import logging
 
-client_bp = Blueprint("client", __name__)
+client_bp = Blueprint("client", __name__, url_prefix="/client")
 fs = get_fs()
 
 # ========== 🔧 유틸 함수 ==========

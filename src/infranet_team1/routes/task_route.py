@@ -10,7 +10,7 @@ import gridfs
 
 fs = gridfs.GridFS(mongo_db)  # mongo_db는 MongoClient().db
 
-task_bp = Blueprint('task', __name__, url_prefix='/task')
+task_bp = Blueprint('task', __name__, url_prefix="/task")
 
 # {
 #   "_id": ObjectId,

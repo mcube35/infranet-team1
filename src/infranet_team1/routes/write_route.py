@@ -6,25 +6,7 @@ import datetime
 import os
 
 # http://127.0.0.1:5000/write/
-write_bp = Blueprint("write", __name__)
-
-# {
-#   "_id": ObjectId,
-#   "title": "게시글 제목",
-#   "content": "게시글 내용",
-#   "author_id": ObjectId,
-#   "tags": ["공지", "자유"],
-#   "created_at": ISODate,
-#   "updated_at": ISODate,
-#   "comments": [
-#     {
-#       "comment_id": ObjectId,
-#       "author_id": ObjectId,
-#       "content": "댓글 내용",
-#       "created_at": ISODate
-#     }
-#   ]
-# }
+write_bp = Blueprint("write", __name__, url_prefix="/write")
 
 def get_posts_collection():
     return mongo_db["posts"]
@@ -41,7 +23,7 @@ def home():
     # 2. 쿼리 조건 구성
     query = {}
     if category:
-        query["category"] = category  # 'tags'가 아닌 'category'로 수정
+        query["category"] = category
     if q:
         query["$or"] = [
             {"title": {"$regex": q, "$options": "i"}},
@@ -103,7 +85,6 @@ def save_post():
         "content": content,
         "category": category,  # ✅ 카테고리 저장
         "author_id": ObjectId(current_user.id),
-        "tags": [],
         "created_at": datetime.datetime.utcnow(),
         "updated_at": None,
         "comments": []

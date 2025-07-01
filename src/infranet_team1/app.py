@@ -1,6 +1,6 @@
 from datetime import timedelta
 import io
-import platform
+import os
 from flask import Flask, jsonify, render_template, request, redirect, url_for, send_file
 from flask_login import LoginManager, current_user
 from db import mongo_db
@@ -21,23 +21,13 @@ from bson.objectid import ObjectId
 from models.user import User
 from extension import get_fs
 
-
-import matplotlib
-matplotlib.use('Agg')
-os_system = platform.system()
-if os_system == "Windows":
-    matplotlib.rcParams['font.family'] = 'Malgun Gothic'
-elif os_system == "Darwin":  # macOS
-    matplotlib.rcParams['font.family'] = 'AppleGothic'
-else:  # Linux (Ubuntu 등)
-    matplotlib.rcParams['font.family'] = 'NanumGothic'
-matplotlib.rcParams["axes.unicode_minus"] = False  # 마이너스 부호 깨짐 방지
+is_debug = os.getenv("FLASK_ENV") != "production"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "bg21PZAji2190OnfnUj291AQmni21PpPSN0"
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=False,
+    SESSION_COOKIE_SECURE=not is_debug,
     REMEMBER_COOKIE_HTTPONLY=True,
 )
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
@@ -80,16 +70,16 @@ def file_download(file_id):
     except Exception:
         return jsonify({"error": "파일을 찾을 수 없습니다."}), 404
 
-app.register_blueprint(write_bp, url_prefix="/write")
-app.register_blueprint(task_bp, url_prefix="/task")
+app.register_blueprint(write_bp)
+app.register_blueprint(task_bp)
 app.register_blueprint(att_bp)
 app.register_blueprint(vacation_bp)
 app.register_blueprint(vacation_admin_bp)
 app.register_blueprint(emp_admin_bp)
 app.register_blueprint(hr_stats_bp)
-app.register_blueprint(issue_bp, url_prefix="/issue")
-app.register_blueprint(client_bp, url_prefix="/client")
-app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(issue_bp)
+app.register_blueprint(client_bp)
+app.register_blueprint(auth_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)

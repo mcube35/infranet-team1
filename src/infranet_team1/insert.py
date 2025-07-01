@@ -3,7 +3,7 @@ from datetime import datetime
 import bcrypt
 
 client = MongoClient("mongodb://localhost:27017/")
-db = client["infranet"]
+db = client["intranet"]
 
 password_plain = "123"
 hashed_password = bcrypt.hashpw(password_plain.encode("utf-8"), bcrypt.gensalt())

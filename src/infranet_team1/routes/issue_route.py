@@ -5,7 +5,7 @@ from db import mongo_db
 from datetime import datetime
 from bson.objectid import ObjectId
 
-issue_bp = Blueprint("issue", __name__)
+issue_bp = Blueprint("issue", __name__, url_prefix="/issue")
 
 ISSUE_STATUS = {1: "신규", 2: "진행중", 3: "해결됨"}
 
