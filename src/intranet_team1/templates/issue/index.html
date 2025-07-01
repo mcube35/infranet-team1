@@ -2,26 +2,66 @@
 
 {% block title %}이슈 모음집{% endblock %}
 
+{% block head %}
+    {{ super() }}
+    
+    <style>
+        .content-sections {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        /* 여기에 content-card 내부 세로 가운데 정렬을 위한 CSS 추가 */
+        .content-card {
+            max-width: 30%;
+            min-width: 280px;
+            
+            /* ---- 추가된 부분 시작 ---- */
+            display: flex; /* Flexbox 컨테이너로 만듭니다. */
+            flex-direction: column; /* 자식 요소들을 세로(열) 방향으로 정렬합니다. */
+            justify-content: center; /* 주축(세로)을 따라 자식들을 가운데 정렬합니다. */
+            /* align-items: center; /* 만약 카드 내의 모든 내용을 가로로도 가운데 정렬하고 싶다면 이 주석을 해제하세요. */
+            /* ---- 추가된 부분 끝 ---- */
+        }
+        
+        @media (max-width: 1024px) {
+            .content-card {
+                max-width: 45%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-card {
+                max-width: 48%;
+            }
+        }
+
+        @media (max-width: 580px) {
+            .content-card {
+                max-width: 90%;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <section class="content-sections">
-        {# issues_by_family_and_status 딕셔너리에는 display_family_name만 키로 있습니다.
-           family_categories 딕셔너리를 사용하여 display_family_name에 해당하는 db_family_prefix를 가져옵니다. #}
         {% for display_family_name, statuses_data in issues_by_family_and_status.items() %}
         <article class="content-card {{ display_family_name | lower | replace(' ', '-') }}">
             <div class="pin"></div>
             <h2>
-                {# 'family_categories' 맵을 사용하여 display_family_name에 해당하는 정확한 family_name (backend, frontend, ui)을 가져옵니다. #}
                 <a href="{{ url_for('issue.show_list', family_name=family_categories[display_family_name]) }}">{{ display_family_name }}</a>
             </h2>
             
-            {# 각 "가족" 내부의 상태(신규, 진행중, 퇴마됨)별로 반복합니다. #}
             {% for display_status_name, issue_list in statuses_data.items() %}
             <div class="issue-category">
                 <h3>{{ display_status_name }}</h3>
                 <ul class="issue-list">
                     {% for issue in issue_list %}
-                    {# 상세 페이지 URL에도 issue.family_name (예: backend)을 전달합니다. #}
                     <li><a href="{{ url_for('issue.detail', family_name=issue.family_name, issue_id=issue.mongo_id) }}">{{ issue.title }}</a></li>
                     {% else %}
                     <li>게시글이 없습니다.</li>

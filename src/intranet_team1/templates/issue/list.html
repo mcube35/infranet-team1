@@ -1,16 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}이슈 목록 - {{ current_family | capitalize }}{% endblock %} 
+{% block title %}이슈 목록 - {{ current_family | capitalize }}{% endblock %}
 
 {% block head %}
-  {{ super() }}
+    {{ super() }}
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>{{ current_family | capitalize }} 이슈 ({{ client_company_display_name_on_top }})</h1> 
-    <a href="{{ url_for('issue.write_get', family_name=current_family) }}">글쓰기</a>
-    
+    <h1>{{ current_family | capitalize }} 이슈</h1>
+
+    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <a href="{{ url_for('issue.write_get', family_name=current_family) }}" style="margin-right: 15px;">글쓰기</a>
+        
+        <form action="{{ url_for('issue.show_list', family_name=current_family) }}" method="get" style="display: flex; align-items: center; margin: 0;">
+            <label>카테고리:
+                <select name="status" required onchange="this.form.submit()">
+                    {# issue_status_options에 있는 모든 옵션을 반복하여 출력합니다. #}
+                    {# 각 option은 {'value': '상태값', 'label': '표시될 이름'} 형태여야 합니다. #}
+                    {% for option in issue_status_options %}
+                        <option value="{{ option.value }}" {% if selected_status == option.value %}selected{% endif %}>
+                            {{ option.label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="search" value="{{ search_query if search_query else '' }}">
+            <input type="hidden" name="client_id" value="{{ selected_client_id if selected_client_id else 'all' }}">
+        </form>
+    </div>
+
     <table class="board-table" border="1" cellspacing="0" cellpadding="5">
         <thead>
             <tr>
@@ -28,23 +47,23 @@
                 <tr>
                     <td class="post-id">{{ post.display_id }}</td>
                     <td class="post-title">
-                        ({{ post.status }}) 
+                        ({{ post.status }})
                         <a href="{{ url_for('issue.detail', family_name=current_family, issue_id=post.mongo_id) }}">{{ post.title }}</a>
                     </td>
-                    <td class="post-author">{{ post.reporter_name }}</td> 
+                    <td class="post-author">{{ post.reporter_name }}</td>
                     <td class="post-author">
-                        {{ post.client_company_name }} 
+                        {{ post.client_company_name }}
                         {% if post.client_company_id and post.client_company_id|length >= 6 %}
                             <span style="font-size: 0.8em; color: #888;">
                                 ({{ post.client_company_id[:3] }}...{{ post.client_company_id[-3:] }})
                             </span>
                         {% endif %}
-                    </td> 
+                    </td>
                     <td class="post-date">{{ post.created_at }}</td>
-                    <td class="post-manage"> 
+                    <td class="post-manage">
                         <div class="action-buttons">
                             <a href="{{ url_for('issue.edit_get', family_name=current_family, issue_id=post.mongo_id) }}" class="edit-btn">수정</a>
-                            
+
                             <form action="{{ url_for('issue.delete', family_name=current_family, issue_id=post.mongo_id) }}" method="post" style="display:inline;" onsubmit="return confirm('이 게시글을 정말 삭제하시겠습니까?');">
                                 <button type="submit" class="delete-btn">삭제</button>
                             </form>
@@ -52,12 +71,30 @@
                     </td>
                 </tr>
                 {% endfor %}
-            {% else %}
+                {% else %}
                 <tr>
-                    <td colspan="6" class="no-posts">게시글이 없습니다.</td> 
+                    <td colspan="6" class="no-posts">게시글이 없습니다.</td>
                 </tr>
-            {% endif %}
-        </tbody>
+                {% endif %}
+            </tbody>
     </table>
+
+    <form action="{{ url_for('issue.show_list', family_name=current_family) }}" method="get" style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <input type="text" name="search" placeholder="제목으로 검색..."
+               value="{{ search_query if search_query else '' }}"
+               style="padding: 5px; width: 250px;">
+
+        <select id="clientSelect" name="client_id" style="padding: 5px;">
+            <option value="all" {% if selected_client_id == 'all' %}selected{% endif %}>모든 고객사</option>
+            {% for client in clients_list %}
+                <option value="{{ client.id }}" {% if selected_client_id == client.id %}selected{% endif %}>
+                    {{ client.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" style="padding: 5px 15px; cursor: pointer;">🔍 검색</button>
+    </form>
+
 </div>
 {% endblock %}
