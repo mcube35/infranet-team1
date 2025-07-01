@@ -1,5 +1,5 @@
 {
     "python.analysis.extraPaths": [
-        "./src/infranet_team1"
+        "./src/intranet_team1"
     ]
 }

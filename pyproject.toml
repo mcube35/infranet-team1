@@ -1,5 +1,5 @@
 [project]
-name = "infranet_team1"
+name = "intranet_team1"
 version = "0.1.0"
 description = ""
 authors = [
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "infranet_team1", from = "src"}]
+packages = [{include = "intranet_team1", from = "src"}]
 
 
 [build-system]

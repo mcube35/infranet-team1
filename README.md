@@ -1,6 +1,6 @@
 # 프로젝트 설명
 
-파이썬의 Flask, pymongo 기반으로 만든 인프라넷입니다.
+파이썬의 Flask, pymongo 기반으로 만든 인트라넷입니다.
 
 
 첫 프로젝트이신 분들도 계셔서 혼란스러워할까봐 MVC 패턴에서 Model은 사실상 빼고 View, Controller만 구현하였습니다.
