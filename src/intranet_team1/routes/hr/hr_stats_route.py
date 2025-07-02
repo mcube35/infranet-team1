@@ -1,5 +1,4 @@
 from collections import Counter
-import io
 from flask import Blueprint, jsonify, render_template, abort
 from flask_login import current_user
 from db import mongo_db

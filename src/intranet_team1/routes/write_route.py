@@ -3,9 +3,7 @@ from bson.objectid import ObjectId
 from flask_login import current_user
 from db import mongo_db
 import datetime
-import os
 
-# http://127.0.0.1:5000/write/
 write_bp = Blueprint("write", __name__, url_prefix="/write")
 
 def get_posts_collection():

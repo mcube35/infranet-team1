@@ -1,11 +1,7 @@
-from io import BytesIO
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for, send_from_directory, Response, current_app, flash
-from matplotlib.figure import Figure
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 from db import mongo_db
 from bson import ObjectId
-from werkzeug.utils import secure_filename
 from datetime import datetime
-import os
 import gridfs
 
 fs = gridfs.GridFS(mongo_db)  # mongo_db는 MongoClient().db

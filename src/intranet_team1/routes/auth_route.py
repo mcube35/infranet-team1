@@ -1,6 +1,5 @@
-from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, current_user
+from flask_login import login_user, logout_user
 import bcrypt
 from db import mongo_db
 from models.user import User

@@ -1,6 +1,6 @@
 from bson.objectid import ObjectId
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from datetime import datetime, timedelta 
+from datetime import datetime
 from flask_login import current_user
 from db import mongo_db
 import math

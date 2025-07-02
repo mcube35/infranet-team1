@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, abort,
 from flask_login import current_user
 from db import mongo_db
 from datetime import datetime, timezone
-import math # 페이지네이션 추가
+import math
 
 vacation_admin_bp = Blueprint("vacation_admin", __name__, url_prefix="/hr/vacation/admin")
 
